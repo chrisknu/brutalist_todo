@@ -87,6 +87,30 @@ const TodoApp = () => {
     setIsListening(!isListening);
   };
 
+  const handleDragEnd = async (result: any) => {
+    if (!result.destination) return;
+
+    const items = Array.from(todos);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    // Update the order of all affected items
+    const updatedItems = items.map((item, index) => ({
+      ...item,
+      order: index,
+    }));
+
+    setTodos(updatedItems);
+
+    // Persist the new order to the database
+    try {
+      await Promise.all(updatedItems.map((todo) => updateTodo(todo)));
+    } catch (error) {
+      setAlert('Failed to update todo order');
+      console.error('Failed to update todo order:', error);
+    }
+  };
+
   useEffect(() => {
     setMounted(true);
     loadTodos();
@@ -184,43 +208,20 @@ const TodoApp = () => {
           </div>
 
           <div className="space-y-2">
-            {todos
-              .filter((todo) => {
-                if (filter === 'all') return true;
-                if (filter === 'done') return todo.completed;
-                if (filter === 'active') return !todo.completed;
-                return todo.categoryId === filter.toLowerCase();
-              })
-              .map((todo) => (
-                <div
-                  key={todo.id}
-                  className="flex items-center justify-between p-4 border-2 border-black dark:border-white bg-white dark:bg-black text-black dark:text-white"
-                >
-                  <div className="flex items-center gap-4">
-                    <button
-                      onClick={() => handleToggleTodo(todo)}
-                      className="text-black dark:text-white hover:text-black/70 dark:hover:text-white/70"
-                    >
-                      {todo.completed ? <CheckCircle2 /> : <Circle />}
-                    </button>
-                    <div className="flex flex-col">
-                      <span className={todo.completed ? 'line-through opacity-50' : ''}>
-                        {todo.text}
-                      </span>
-                      <span className="text-xs opacity-60">
-                        {DEFAULT_CATEGORIES.find((c) => c.id === todo.categoryId)?.name ||
-                          'PERSONAL'}
-                      </span>
-                    </div>
-                  </div>
-                  <Button
-                    onClick={() => handleDeleteTodo(todo.id)}
-                    className="border-2 border-black dark:border-white text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
+            <DraggableTodoList
+              todos={todos
+                .filter((todo) => {
+                  if (filter === 'all') return true;
+                  if (filter === 'done') return todo.completed;
+                  if (filter === 'active') return !todo.completed;
+                  return todo.categoryId === filter.toLowerCase();
+                })
+                .sort((a, b) => (a.order || 0) - (b.order || 0))}
+              onDragEnd={handleDragEnd}
+              onToggle={handleToggleTodo}
+              onDelete={handleDeleteTodo}
+              categories={DEFAULT_CATEGORIES}
+            />
 
             {todos.length === 0 && (
               <div className="text-center py-12 border-4 border-black dark:border-white">
