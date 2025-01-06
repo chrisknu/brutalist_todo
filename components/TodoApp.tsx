@@ -41,15 +41,17 @@ const TodoApp = () => {
     if (!todosContainerRef.current) return;
 
     const todoItems = todosContainerRef.current.querySelectorAll('[data-todo-item]');
+    const cleanupFns: (() => void)[] = [];
 
     todoItems.forEach((item, index) => {
-      draggable({
+      const cleanup = draggable({
         element: item as HTMLElement,
         getInitialData: () => ({ index }),
       });
+      cleanupFns.push(cleanup);
     });
 
-    const cleanup = dropTargetForElements({
+    const dropCleanup = dropTargetForElements({
       element: todosContainerRef.current,
       onDrop: async ({ source, location }) => {
         const sourceIndex = source.data.index as number;
@@ -76,8 +78,11 @@ const TodoApp = () => {
         }
       },
     });
+    cleanupFns.push(dropCleanup);
 
-    return cleanup;
+    return () => {
+      cleanupFns.forEach((cleanup) => cleanup());
+    };
   }, [todos]);
 
   const loadTodos = async () => {
@@ -94,7 +99,8 @@ const TodoApp = () => {
     if (!newTodo.trim()) return;
 
     try {
-      const todo: Omit<Todo, 'id'> = {
+      const todo: Omit<Todo, 'id'> & { id: string } = {
+        id: crypto.randomUUID(),
         text: newTodo,
         completed: false,
         createdAt: new Date().toISOString(),
@@ -108,6 +114,7 @@ const TodoApp = () => {
       setNewTodo('');
       setAlert('Todo added successfully');
     } catch (error) {
+      console.error('Error adding todo:', error);
       setAlert('Failed to add todo');
     }
   };
