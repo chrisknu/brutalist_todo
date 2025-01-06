@@ -95,7 +95,7 @@ const TodoApp = () => {
   };
 
   const handleDragEnd = async (result: any) => {
-    if (!result.destination) return;
+    if (!result.destination || result.source.droppableId !== 'droppable-todos') return;
 
     try {
       const { source, destination } = result;

@@ -103,7 +103,7 @@ DroppableComponent.displayName = 'DroppableComponent';
 
 const DraggableTodoList = memo(({ todos, onToggle, onDelete, categories }: Props) => {
   return (
-    <Droppable droppableId="TODOS">
+    <Droppable droppableId="droppable-todos">
       {(provided) => (
         <DroppableComponent
           provided={provided}
