@@ -90,9 +90,23 @@ const TodoApp = () => {
   const handleDragEnd = async (result: any) => {
     if (!result.destination) return;
 
+    const filteredTodos = todos
+      .filter((todo) => {
+        if (filter === 'all') return true;
+        if (filter === 'done') return todo.completed;
+        if (filter === 'active') return !todo.completed;
+        return todo.categoryId === filter.toLowerCase();
+      })
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
+
     const items = Array.from(todos);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
+    const sourceIndex = todos.findIndex((t) => t.id === filteredTodos[result.source.index].id);
+    const destinationIndex = todos.findIndex(
+      (t) => t.id === filteredTodos[result.destination.index].id
+    );
+
+    const [reorderedItem] = items.splice(sourceIndex, 1);
+    items.splice(destinationIndex, 0, reorderedItem);
 
     // Update the order of all affected items
     const updatedItems = items.map((item, index) => ({
@@ -133,81 +147,81 @@ const TodoApp = () => {
           </Button>
         </div>
 
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <div className="p-4 bg-white dark:bg-black text-black dark:text-white">
-            <div className="h-16 mb-4">
-              {alert && (
-                <div className="bg-black dark:bg-white text-white dark:text-black p-4">{alert}</div>
-              )}
+        <div className="p-4 bg-white dark:bg-black text-black dark:text-white">
+          <div className="h-16 mb-4">
+            {alert && (
+              <div className="bg-black dark:bg-white text-white dark:text-black p-4">{alert}</div>
+            )}
+          </div>
+
+          <form onSubmit={handleAddTodo} className="mb-6">
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                placeholder="WHAT NEEDS TO BE DONE?"
+                value={newTodo}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewTodo(e.target.value)}
+                className="flex-1 border-2 border-black dark:border-white bg-white dark:bg-black text-black dark:text-white placeholder:text-black/50 dark:placeholder:text-white/50"
+              />
+              <Button
+                type="button"
+                onClick={toggleVoiceInput}
+                className="border-2 border-black dark:border-white text-black dark:text-white"
+              >
+                {isListening ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
+              </Button>
+              <Button
+                type="submit"
+                className="border-2 border-black dark:border-white text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black"
+              >
+                ADD
+              </Button>
             </div>
 
-            <form onSubmit={handleAddTodo} className="mb-6">
+            <div className="mt-4">
+              <p className="text-sm mb-2">
+                Category:{' '}
+                {selectedCategory
+                  ? DEFAULT_CATEGORIES.find((c) => c.id === selectedCategory)?.name
+                  : 'PERSONAL'}
+              </p>
               <div className="flex gap-2">
-                <Input
-                  type="text"
-                  placeholder="WHAT NEEDS TO BE DONE?"
-                  value={newTodo}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewTodo(e.target.value)}
-                  className="flex-1 border-2 border-black dark:border-white bg-white dark:bg-black text-black dark:text-white placeholder:text-black/50 dark:placeholder:text-white/50"
-                />
-                <Button
-                  type="button"
-                  onClick={toggleVoiceInput}
-                  className="border-2 border-black dark:border-white text-black dark:text-white"
-                >
-                  {isListening ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
-                </Button>
-                <Button
-                  type="submit"
-                  className="border-2 border-black dark:border-white text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black"
-                >
-                  ADD
-                </Button>
-              </div>
-
-              <div className="mt-4">
-                <p className="text-sm mb-2">
-                  Category:{' '}
-                  {selectedCategory
-                    ? DEFAULT_CATEGORIES.find((c) => c.id === selectedCategory)?.name
-                    : 'PERSONAL'}
-                </p>
-                <div className="flex gap-2">
-                  {DEFAULT_CATEGORIES.map((category) => (
-                    <Button
-                      key={category.id}
-                      onClick={() => setSelectedCategory(category.id)}
-                      className={`border-2 px-4 py-2 ${
-                        selectedCategory === category.id
-                          ? 'bg-black dark:bg-white text-white dark:text-black'
-                          : 'border-black dark:border-white text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black'
-                      }`}
-                    >
-                      {category.name}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            </form>
-
-            <div className="flex gap-2 mb-4">
-              {['ALL', 'ACTIVE', 'DONE', ...DEFAULT_CATEGORIES.map((c) => c.name)].map(
-                (filterName) => (
+                {DEFAULT_CATEGORIES.map((category) => (
                   <Button
-                    key={filterName}
-                    onClick={() => setFilter(filterName.toLowerCase())}
+                    key={category.id}
+                    onClick={() => setSelectedCategory(category.id)}
                     className={`border-2 px-4 py-2 ${
-                      filter === filterName.toLowerCase()
+                      selectedCategory === category.id
                         ? 'bg-black dark:bg-white text-white dark:text-black'
                         : 'border-black dark:border-white text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black'
                     }`}
                   >
-                    {filterName}
+                    {category.name}
                   </Button>
-                )
-              )}
+                ))}
+              </div>
             </div>
+          </form>
 
+          <div className="flex gap-2 mb-4">
+            {['ALL', 'ACTIVE', 'DONE', ...DEFAULT_CATEGORIES.map((c) => c.name)].map(
+              (filterName) => (
+                <Button
+                  key={filterName}
+                  onClick={() => setFilter(filterName.toLowerCase())}
+                  className={`border-2 px-4 py-2 ${
+                    filter === filterName.toLowerCase()
+                      ? 'bg-black dark:bg-white text-white dark:text-black'
+                      : 'border-black dark:border-white text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black'
+                  }`}
+                >
+                  {filterName}
+                </Button>
+              )
+            )}
+          </div>
+
+          <DragDropContext onDragEnd={handleDragEnd}>
             <div className="space-y-2">
               <DraggableTodoList
                 todos={todos
@@ -230,8 +244,8 @@ const TodoApp = () => {
                 </div>
               )}
             </div>
-          </div>
-        </DragDropContext>
+          </DragDropContext>
+        </div>
       </div>
     </div>
   );

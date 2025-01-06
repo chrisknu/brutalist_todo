@@ -20,8 +20,8 @@ const DroppableComponent = ({
 }: Props & { provided: any }) => (
   <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-4">
     {todos.map((todo, index) => (
-      <Draggable key={todo.id} draggableId={todo.id} index={index}>
-        {(provided) => (
+      <Draggable key={todo.id} draggableId={`todo-${todo.id}`} index={index}>
+        {(provided, snapshot) => (
           <div
             ref={provided.innerRef}
             {...provided.draggableProps}
@@ -30,7 +30,9 @@ const DroppableComponent = ({
               flex items-center justify-between p-4 
               border-4 border-black dark:border-white
               ${todo.completed ? 'bg-black text-white' : 'bg-white text-black'}
+              ${snapshot.isDragging ? 'opacity-50' : ''}
               cursor-move
+              transition-all
             `}
           >
             <div className="flex items-center gap-4">
@@ -78,7 +80,7 @@ const DroppableComponent = ({
 
 const MemoizedDraggableTodoList = memo(({ todos, onToggle, onDelete, categories }: Props) => {
   return (
-    <Droppable droppableId="todo-list">
+    <Droppable droppableId="todo-list" type="todo">
       {(provided) => (
         <DroppableComponent
           provided={provided}
