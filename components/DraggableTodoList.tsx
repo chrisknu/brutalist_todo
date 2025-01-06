@@ -18,7 +18,7 @@ export const DraggableTodoList = ({ todos, onDragEnd, onToggle, onDelete, catego
       {(provided) => (
         <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-4">
           {todos.map((todo, index) => (
-            <Draggable key={todo.id} draggableId={todo.id.toString()} index={index}>
+            <Draggable key={todo.id} draggableId={todo.id} index={index}>
               {(provided) => (
                 <div
                   ref={provided.innerRef}

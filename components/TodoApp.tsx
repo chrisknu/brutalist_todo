@@ -30,7 +30,7 @@ const TodoApp = () => {
   const loadTodos = async () => {
     try {
       const todos = await getAllTodos();
-      setTodos(todos);
+      setTodos(todos.sort((a: Todo, b: Todo) => (a.order || 0) - (b.order || 0)));
     } catch (error) {
       setAlert('Failed to load todos');
       console.error('Failed to load todos:', error);
