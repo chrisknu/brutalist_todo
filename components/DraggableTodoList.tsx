@@ -6,7 +6,6 @@ import { CheckCircle2, Circle, Tag, Trash2 } from 'lucide-react';
 
 interface Props {
   todos: Todo[];
-  onDragEnd: (result: any) => void;
   onToggle: (todo: Todo) => void;
   onDelete: (id: string) => void;
   categories: any[];
@@ -77,24 +76,21 @@ const DroppableComponent = ({
   </div>
 );
 
-const MemoizedDraggableTodoList = memo(
-  ({ todos, onDragEnd, onToggle, onDelete, categories }: Props) => {
-    return (
-      <Droppable droppableId="todo-list">
-        {(provided) => (
-          <DroppableComponent
-            provided={provided}
-            todos={todos}
-            onDragEnd={onDragEnd}
-            onToggle={onToggle}
-            onDelete={onDelete}
-            categories={categories}
-          />
-        )}
-      </Droppable>
-    );
-  }
-);
+const MemoizedDraggableTodoList = memo(({ todos, onToggle, onDelete, categories }: Props) => {
+  return (
+    <Droppable droppableId="todo-list">
+      {(provided) => (
+        <DroppableComponent
+          provided={provided}
+          todos={todos}
+          onToggle={onToggle}
+          onDelete={onDelete}
+          categories={categories}
+        />
+      )}
+    </Droppable>
+  );
+});
 
 MemoizedDraggableTodoList.displayName = 'DraggableTodoList';
 

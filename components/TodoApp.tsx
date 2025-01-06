@@ -218,7 +218,6 @@ const TodoApp = () => {
                     return todo.categoryId === filter.toLowerCase();
                   })
                   .sort((a, b) => (a.order || 0) - (b.order || 0))}
-                onDragEnd={handleDragEnd}
                 onToggle={handleToggleTodo}
                 onDelete={handleDeleteTodo}
                 categories={DEFAULT_CATEGORIES}
