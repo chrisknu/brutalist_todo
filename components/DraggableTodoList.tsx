@@ -4,6 +4,8 @@ import { Todo } from '../lib/types';
 import { Button } from './ui/button';
 import { CheckCircle2, Circle, Tag, Trash2 } from 'lucide-react';
 
+const DROPPABLE_ID = 'TODOS_LIST';
+
 interface Props {
   todos: Todo[];
   onToggle: (todo: Todo) => void;
@@ -20,7 +22,7 @@ const DroppableComponent = ({
 }: Props & { provided: any }) => (
   <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-4">
     {todos.map((todo, index) => (
-      <Draggable key={todo.id} draggableId={`todo-${todo.id}`} index={index}>
+      <Draggable key={todo.id} draggableId={todo.id} index={index}>
         {(provided, snapshot) => (
           <div
             ref={provided.innerRef}
@@ -80,7 +82,7 @@ const DroppableComponent = ({
 
 const MemoizedDraggableTodoList = memo(({ todos, onToggle, onDelete, categories }: Props) => {
   return (
-    <Droppable droppableId="todo-list" type="todo">
+    <Droppable droppableId={DROPPABLE_ID}>
       {(provided) => (
         <DroppableComponent
           provided={provided}

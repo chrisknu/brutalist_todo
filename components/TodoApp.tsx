@@ -88,7 +88,7 @@ const TodoApp = () => {
   };
 
   const handleDragEnd = async (result: any) => {
-    if (!result.destination) return;
+    if (!result.destination || result.source.droppableId !== 'TODOS_LIST') return;
 
     const filteredTodos = todos
       .filter((todo) => {
