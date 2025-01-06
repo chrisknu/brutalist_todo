@@ -1,134 +1,108 @@
-import React, { memo } from 'react';
+import React from 'react';
 import {
-  Droppable,
-  Draggable,
-  DroppableProvided,
-  DraggableProvided,
-  DraggableStateSnapshot,
-} from 'react-beautiful-dnd';
-import { Todo } from '../lib/types';
+  draggable,
+  dropTargetForElements,
+  monitorForElements,
+} from '@atlaskit/pragmatic-drag-and-drop/adapter/element';
+import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
+import { setCustomNativeDragPreview } from '@atlaskit/pragmatic-drag-and-drop/util/set-custom-native-drag-preview';
 import { Button } from './ui/button';
-import { CheckCircle2, Circle, Tag, Trash2 } from 'lucide-react';
+import { CheckCircle2, Circle, Trash2 } from 'lucide-react';
+import type { Todo, Category } from '../lib/types';
 
 interface Props {
   todos: Todo[];
+  onReorder: (sourceIndex: number, destinationIndex: number) => void;
   onToggle: (todo: Todo) => void;
-  onDelete: (id: string) => void;
-  categories: any[];
+  onDelete: (id: number) => void;
+  categories: Category[];
 }
 
-const TodoItem = memo(
-  ({
-    todo,
-    index,
-    onToggle,
-    onDelete,
-    categories,
-  }: {
-    todo: Todo;
-    index: number;
-    onToggle: (todo: Todo) => void;
-    onDelete: (id: string) => void;
-    categories: any[];
-  }) => (
-    <Draggable draggableId={`todo-${todo.id}`} index={index}>
-      {(provided: DraggableProvided, snapshot: DraggableStateSnapshot) => (
+export const DraggableTodoList = ({ todos, onReorder, onToggle, onDelete, categories }: Props) => {
+  const cleanupRefs = React.useRef<Array<() => void>>([]);
+
+  React.useEffect(() => {
+    const todoItems = document.querySelectorAll('[data-todo-item]');
+
+    // Cleanup previous subscriptions
+    cleanupRefs.current.forEach((cleanup) => cleanup());
+    cleanupRefs.current = [];
+
+    todoItems.forEach((item, index) => {
+      const cleanup = combine(
+        // Make item draggable
+        draggable({
+          element: item,
+          dragHandle: item.querySelector('[data-drag-handle]')!,
+          getInitialData: () => ({
+            index,
+            type: 'todo-item',
+            itemId: todos[index].id,
+          }),
+        }),
+        // Add drop target behavior
+        dropTargetForElements({
+          element: item,
+          getData: () => ({ index }),
+          canDrop: (args) => args.source.data.type === 'todo-item',
+          getIsSticky: () => true,
+        }),
+        // Monitor for drag operations
+        monitorForElements({
+          onDragStart: ({ source }) => {
+            item.classList.add('opacity-50');
+          },
+          onDrop: ({ location, source }) => {
+            const sourceIndex = source.data.index;
+            const destinationElement = location.current.dropTargets[0];
+
+            if (!destinationElement) return;
+
+            const destinationIndex = Array.from(todoItems).indexOf(destinationElement);
+            if (sourceIndex !== destinationIndex) {
+              onReorder(sourceIndex, destinationIndex);
+            }
+          },
+          onDragEnd: () => {
+            item.classList.remove('opacity-50');
+          },
+        })
+      );
+
+      cleanupRefs.current.push(cleanup);
+    });
+
+    return () => {
+      cleanupRefs.current.forEach((cleanup) => cleanup());
+      cleanupRefs.current = [];
+    };
+  }, [todos, onReorder]);
+
+  return (
+    <div data-todo-list className="space-y-2">
+      {todos.map((todo, index) => (
         <div
-          ref={provided.innerRef}
-          {...provided.draggableProps}
-          {...provided.dragHandleProps}
-          className={`
-            flex items-center justify-between p-4 
-            border-4 border-black dark:border-white
-            ${todo.completed ? 'bg-black text-white' : 'bg-white text-black'}
-            ${snapshot.isDragging ? 'opacity-50' : ''}
-            cursor-move
-            transition-all
-          `}
+          key={todo.id}
+          data-todo-item
+          className="flex items-center justify-between p-4 border-2 border-black dark:border-white bg-white dark:bg-black text-black dark:text-white transition-opacity duration-200"
         >
-          <div className="flex items-center gap-4">
-            <button onClick={() => onToggle(todo)} className="focus:outline-none">
-              {todo.completed ? (
-                <CheckCircle2 className="w-6 h-6" />
-              ) : (
-                <Circle className="w-6 h-6" />
-              )}
+          <div className="flex items-center gap-4" data-drag-handle>
+            <button
+              onClick={() => onToggle(todo)}
+              className="text-black dark:text-white hover:text-black/70 dark:hover:text-white/70"
+            >
+              {todo.completed ? <CheckCircle2 /> : <Circle />}
             </button>
-            <div className="flex items-center gap-2">
-              {todo.categoryId && (
-                <Tag
-                  size={16}
-                  style={{
-                    color: categories.find((c) => c.id === todo.categoryId)?.color,
-                  }}
-                />
-              )}
-              <span className={`text-lg ${todo.completed ? 'line-through' : ''}`}>{todo.text}</span>
-            </div>
+            <span className={todo.completed ? 'line-through opacity-50' : ''}>{todo.text}</span>
           </div>
           <Button
             onClick={() => onDelete(todo.id)}
-            className={`
-              rounded-none border-2 border-current p-2
-              ${
-                todo.completed
-                  ? 'text-white hover:bg-white hover:text-black'
-                  : 'text-black hover:bg-black hover:text-white'
-              }
-            `}
+            className="border-2 border-black dark:border-white text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black"
           >
-            <Trash2 className="w-5 h-5" />
+            <Trash2 className="h-4 w-4" />
           </Button>
         </div>
-      )}
-    </Draggable>
-  )
-);
-
-TodoItem.displayName = 'TodoItem';
-
-const DroppableComponent = memo(
-  ({
-    provided,
-    todos,
-    onToggle,
-    onDelete,
-    categories,
-  }: Props & { provided: DroppableProvided }) => (
-    <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-4">
-      {todos.map((todo, index) => (
-        <TodoItem
-          key={todo.id}
-          todo={todo}
-          index={index}
-          onToggle={onToggle}
-          onDelete={onDelete}
-          categories={categories}
-        />
       ))}
-      {provided.placeholder}
     </div>
-  )
-);
-
-DroppableComponent.displayName = 'DroppableComponent';
-
-const DraggableTodoList = memo(({ todos, onToggle, onDelete, categories }: Props) => {
-  return (
-    <Droppable droppableId="droppable-todos">
-      {(provided: DroppableProvided) => (
-        <DroppableComponent
-          provided={provided}
-          todos={todos}
-          onToggle={onToggle}
-          onDelete={onDelete}
-          categories={categories}
-        />
-      )}
-    </Droppable>
   );
-});
-
-DraggableTodoList.displayName = 'DraggableTodoList';
-
-export { DraggableTodoList };
+};
