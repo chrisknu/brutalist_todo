@@ -133,104 +133,106 @@ const TodoApp = () => {
           </Button>
         </div>
 
-        <div className="p-4 bg-white dark:bg-black text-black dark:text-white">
-          <div className="h-16 mb-4">
-            {alert && (
-              <div className="bg-black dark:bg-white text-white dark:text-black p-4">{alert}</div>
-            )}
-          </div>
-
-          <form onSubmit={handleAddTodo} className="mb-6">
-            <div className="flex gap-2">
-              <Input
-                type="text"
-                placeholder="WHAT NEEDS TO BE DONE?"
-                value={newTodo}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewTodo(e.target.value)}
-                className="flex-1 border-2 border-black dark:border-white bg-white dark:bg-black text-black dark:text-white placeholder:text-black/50 dark:placeholder:text-white/50"
-              />
-              <Button
-                type="button"
-                onClick={toggleVoiceInput}
-                className="border-2 border-black dark:border-white text-black dark:text-white"
-              >
-                {isListening ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
-              </Button>
-              <Button
-                type="submit"
-                className="border-2 border-black dark:border-white text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black"
-              >
-                ADD
-              </Button>
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <div className="p-4 bg-white dark:bg-black text-black dark:text-white">
+            <div className="h-16 mb-4">
+              {alert && (
+                <div className="bg-black dark:bg-white text-white dark:text-black p-4">{alert}</div>
+              )}
             </div>
 
-            <div className="mt-4">
-              <p className="text-sm mb-2">
-                Category:{' '}
-                {selectedCategory
-                  ? DEFAULT_CATEGORIES.find((c) => c.id === selectedCategory)?.name
-                  : 'PERSONAL'}
-              </p>
+            <form onSubmit={handleAddTodo} className="mb-6">
               <div className="flex gap-2">
-                {DEFAULT_CATEGORIES.map((category) => (
+                <Input
+                  type="text"
+                  placeholder="WHAT NEEDS TO BE DONE?"
+                  value={newTodo}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewTodo(e.target.value)}
+                  className="flex-1 border-2 border-black dark:border-white bg-white dark:bg-black text-black dark:text-white placeholder:text-black/50 dark:placeholder:text-white/50"
+                />
+                <Button
+                  type="button"
+                  onClick={toggleVoiceInput}
+                  className="border-2 border-black dark:border-white text-black dark:text-white"
+                >
+                  {isListening ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
+                </Button>
+                <Button
+                  type="submit"
+                  className="border-2 border-black dark:border-white text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black"
+                >
+                  ADD
+                </Button>
+              </div>
+
+              <div className="mt-4">
+                <p className="text-sm mb-2">
+                  Category:{' '}
+                  {selectedCategory
+                    ? DEFAULT_CATEGORIES.find((c) => c.id === selectedCategory)?.name
+                    : 'PERSONAL'}
+                </p>
+                <div className="flex gap-2">
+                  {DEFAULT_CATEGORIES.map((category) => (
+                    <Button
+                      key={category.id}
+                      onClick={() => setSelectedCategory(category.id)}
+                      className={`border-2 px-4 py-2 ${
+                        selectedCategory === category.id
+                          ? 'bg-black dark:bg-white text-white dark:text-black'
+                          : 'border-black dark:border-white text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black'
+                      }`}
+                    >
+                      {category.name}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </form>
+
+            <div className="flex gap-2 mb-4">
+              {['ALL', 'ACTIVE', 'DONE', ...DEFAULT_CATEGORIES.map((c) => c.name)].map(
+                (filterName) => (
                   <Button
-                    key={category.id}
-                    onClick={() => setSelectedCategory(category.id)}
+                    key={filterName}
+                    onClick={() => setFilter(filterName.toLowerCase())}
                     className={`border-2 px-4 py-2 ${
-                      selectedCategory === category.id
+                      filter === filterName.toLowerCase()
                         ? 'bg-black dark:bg-white text-white dark:text-black'
                         : 'border-black dark:border-white text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black'
                     }`}
                   >
-                    {category.name}
+                    {filterName}
                   </Button>
-                ))}
-              </div>
+                )
+              )}
             </div>
-          </form>
 
-          <div className="flex gap-2 mb-4">
-            {['ALL', 'ACTIVE', 'DONE', ...DEFAULT_CATEGORIES.map((c) => c.name)].map(
-              (filterName) => (
-                <Button
-                  key={filterName}
-                  onClick={() => setFilter(filterName.toLowerCase())}
-                  className={`border-2 px-4 py-2 ${
-                    filter === filterName.toLowerCase()
-                      ? 'bg-black dark:bg-white text-white dark:text-black'
-                      : 'border-black dark:border-white text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black'
-                  }`}
-                >
-                  {filterName}
-                </Button>
-              )
-            )}
+            <div className="space-y-2">
+              <DraggableTodoList
+                todos={todos
+                  .filter((todo) => {
+                    if (filter === 'all') return true;
+                    if (filter === 'done') return todo.completed;
+                    if (filter === 'active') return !todo.completed;
+                    return todo.categoryId === filter.toLowerCase();
+                  })
+                  .sort((a, b) => (a.order || 0) - (b.order || 0))}
+                onDragEnd={handleDragEnd}
+                onToggle={handleToggleTodo}
+                onDelete={handleDeleteTodo}
+                categories={DEFAULT_CATEGORIES}
+              />
+
+              {todos.length === 0 && (
+                <div className="text-center py-12 border-4 border-black dark:border-white">
+                  <p className="text-3xl font-bold text-black dark:text-white">NO_TODOS</p>
+                  <p className="text-xl text-black dark:text-white">ADD_ONE_ABOVE</p>
+                </div>
+              )}
+            </div>
           </div>
-
-          <div className="space-y-2">
-            <DraggableTodoList
-              todos={todos
-                .filter((todo) => {
-                  if (filter === 'all') return true;
-                  if (filter === 'done') return todo.completed;
-                  if (filter === 'active') return !todo.completed;
-                  return todo.categoryId === filter.toLowerCase();
-                })
-                .sort((a, b) => (a.order || 0) - (b.order || 0))}
-              onDragEnd={handleDragEnd}
-              onToggle={handleToggleTodo}
-              onDelete={handleDeleteTodo}
-              categories={DEFAULT_CATEGORIES}
-            />
-
-            {todos.length === 0 && (
-              <div className="text-center py-12 border-4 border-black dark:border-white">
-                <p className="text-3xl font-bold text-black dark:text-white">NO_TODOS</p>
-                <p className="text-xl text-black dark:text-white">ADD_ONE_ABOVE</p>
-              </div>
-            )}
-          </div>
-        </div>
+        </DragDropContext>
       </div>
     </div>
   );
