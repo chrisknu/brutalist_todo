@@ -3,9 +3,14 @@ import {
   draggable,
   dropTargetForElements,
   monitorForElements,
-} from '@atlaskit/pragmatic-drag-and-drop/adapter/element';
+  type DropTargetFeedbackArgs,
+} from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
-import { setCustomNativeDragPreview } from '@atlaskit/pragmatic-drag-and-drop/util/set-custom-native-drag-preview';
+import type {
+  DropTargetRecord,
+  ElementDragType,
+  BaseEventPayload,
+} from '@atlaskit/pragmatic-drag-and-drop/types';
 import { Button } from './ui/button';
 import { CheckCircle2, Circle, Trash2 } from 'lucide-react';
 import type { Todo, Category } from '../lib/types';
@@ -18,25 +23,34 @@ interface Props {
   categories: Category[];
 }
 
+interface DragData extends Record<string, unknown> {
+  index: number;
+  type: 'todo-item';
+  itemId: number;
+}
+
 export const DraggableTodoList = ({ todos, onReorder, onToggle, onDelete, categories }: Props) => {
   const cleanupRefs = React.useRef<Array<() => void>>([]);
 
   React.useEffect(() => {
-    const todoItems = document.querySelectorAll('[data-todo-item]');
+    const todoItems = document.querySelectorAll<HTMLElement>('[data-todo-item]');
 
     // Cleanup previous subscriptions
     cleanupRefs.current.forEach((cleanup) => cleanup());
     cleanupRefs.current = [];
 
     todoItems.forEach((item, index) => {
+      const dragHandle = item.querySelector<HTMLElement>('[data-drag-handle]');
+      if (!dragHandle) return;
+
       const cleanup = combine(
         // Make item draggable
         draggable({
           element: item,
-          dragHandle: item.querySelector('[data-drag-handle]')!,
+          dragHandle,
           getInitialData: () => ({
             index,
-            type: 'todo-item',
+            type: 'todo-item' as const,
             itemId: todos[index].id,
           }),
         }),
@@ -44,27 +58,30 @@ export const DraggableTodoList = ({ todos, onReorder, onToggle, onDelete, catego
         dropTargetForElements({
           element: item,
           getData: () => ({ index }),
-          canDrop: (args) => args.source.data.type === 'todo-item',
+          canDrop: (args: DropTargetFeedbackArgs) => args.source.data.type === 'todo-item',
           getIsSticky: () => true,
         }),
         // Monitor for drag operations
         monitorForElements({
-          onDragStart: ({ source }) => {
+          onDragStart: (args: BaseEventPayload<ElementDragType>) => {
             item.classList.add('opacity-50');
           },
-          onDrop: ({ location, source }) => {
-            const sourceIndex = source.data.index;
-            const destinationElement = location.current.dropTargets[0];
+          onDrag: (args: BaseEventPayload<ElementDragType>) => {
+            const sourceIndex = args.source.data.index as number;
+            const destinationElement = args.location.current.dropTargets[0];
 
-            if (!destinationElement) return;
+            if (!destinationElement) {
+              item.classList.remove('opacity-50');
+              return;
+            }
 
-            const destinationIndex = Array.from(todoItems).indexOf(destinationElement);
+            const destinationIndex = Array.from(todoItems).indexOf(
+              destinationElement.element as HTMLElement
+            );
             if (sourceIndex !== destinationIndex) {
               onReorder(sourceIndex, destinationIndex);
+              item.classList.remove('opacity-50');
             }
-          },
-          onDragEnd: () => {
-            item.classList.remove('opacity-50');
           },
         })
       );
@@ -96,7 +113,7 @@ export const DraggableTodoList = ({ todos, onReorder, onToggle, onDelete, catego
             <span className={todo.completed ? 'line-through opacity-50' : ''}>{todo.text}</span>
           </div>
           <Button
-            onClick={() => onDelete(todo.id)}
+            onClick={() => onDelete(Number(todo.id))}
             className="border-2 border-black dark:border-white text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black"
           >
             <Trash2 className="h-4 w-4" />

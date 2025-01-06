@@ -1,14 +1,16 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { DragDropContext, DropResult } from 'react-beautiful-dnd';
 import { Plus, Trash2, CheckCircle2, Circle, Mic, MicOff } from 'lucide-react';
 import { useTheme } from 'next-themes';
-import { Input } from './ui/input';
-import { Button } from './ui/button';
+import { Input } from '../components/ui/input';
+import { Button } from '../components/ui/button';
 import { getAllTodos, addTodo, updateTodo, deleteTodo } from '../lib/db';
-import { DraggableTodoList } from './DraggableTodoList';
 import type { Todo, Category } from '../lib/types';
+import {
+  draggable,
+  dropTargetForElements,
+} from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 
 const DEFAULT_CATEGORIES: Category[] = [
   { id: 'work', name: 'WORK', color: '#000000' },
@@ -22,148 +24,161 @@ const TodoApp = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [newTodo, setNewTodo] = useState('');
   const [alert, setAlert] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('personal');
+  const [selectedCategory, setSelectedCategory] = useState<string>();
   const [filter, setFilter] = useState<string>('all');
   const [isListening, setIsListening] = useState(false);
   const { theme, setTheme } = useTheme();
-
-  const loadTodos = async () => {
-    try {
-      const loadedTodos = await getAllTodos();
-      // Ensure all todos have an order
-      const todosWithOrder = loadedTodos.map((todo, index) => ({
-        ...todo,
-        order: todo.order ?? index,
-      }));
-      setTodos(todosWithOrder.sort((a, b) => a.order - b.order));
-    } catch (error) {
-      setAlert('Failed to load todos');
-      console.error('Failed to load todos:', error);
-    }
-  };
-
-  const handleAddTodo = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTodo.trim()) return;
-
-    try {
-      const newTodoItem = {
-        id: crypto.randomUUID(),
-        text: newTodo,
-        completed: false,
-        categoryId: selectedCategory,
-        createdAt: new Date().toISOString(),
-        subtasks: [],
-        order: todos.length,
-      };
-
-      const addedTodo = await addTodo(newTodoItem);
-      setTodos((prev) => [...prev, addedTodo].sort((a, b) => a.order - b.order));
-      setNewTodo('');
-    } catch (error) {
-      setAlert('Failed to add todo');
-      console.error('Failed to add todo:', error);
-    }
-  };
-
-  const handleToggleTodo = async (todo: Todo) => {
-    try {
-      const updatedTodo = await updateTodo({
-        ...todo,
-        completed: !todo.completed,
-      });
-      setTodos((prev) => prev.map((t) => (t.id === todo.id ? updatedTodo : t)));
-    } catch (error) {
-      setAlert('Failed to update todo');
-      console.error('Failed to update todo:', error);
-    }
-  };
-
-  const handleDeleteTodo = async (id: string) => {
-    try {
-      await deleteTodo(id);
-      setTodos((prev) => prev.filter((todo) => todo.id !== id));
-    } catch (error) {
-      setAlert('Failed to delete todo');
-      console.error('Failed to delete todo:', error);
-    }
-  };
-
-  const toggleVoiceInput = () => {
-    // Implement voice input functionality here
-    setIsListening(!isListening);
-  };
-
-  const handleDragEnd = async (result: DropResult) => {
-    const { destination, source, draggableId } = result;
-
-    // Dropped outside the list or no movement
-    if (
-      !destination ||
-      (destination.droppableId === source.droppableId && destination.index === source.index)
-    ) {
-      return;
-    }
-
-    try {
-      // Get the current filtered and sorted list
-      const filteredTodos = todos
-        .filter((todo) => {
-          if (filter === 'all') return true;
-          if (filter === 'done') return todo.completed;
-          if (filter === 'active') return !todo.completed;
-          return todo.categoryId === filter.toLowerCase();
-        })
-        .sort((a, b) => a.order - b.order);
-
-      // Find the actual todo being moved
-      const todoId = draggableId.replace('todo-', '');
-      const movedTodo = todos.find((t) => t.id === todoId);
-
-      if (!movedTodo) return;
-
-      // Create new array with updated positions
-      const newFilteredTodos = Array.from(filteredTodos);
-      newFilteredTodos.splice(source.index, 1);
-      newFilteredTodos.splice(destination.index, 0, movedTodo);
-
-      // Update orders for all todos
-      const updatedTodos = todos.map((todo) => {
-        const filteredIndex = newFilteredTodos.findIndex((t) => t.id === todo.id);
-        return {
-          ...todo,
-          order: filteredIndex !== -1 ? filteredIndex : todo.order,
-        };
-      });
-
-      // Update state immediately for smooth UI
-      setTodos(updatedTodos);
-
-      // Persist changes to database
-      await Promise.all(updatedTodos.map((todo) => updateTodo(todo)));
-    } catch (error) {
-      setAlert('Failed to reorder todos');
-      console.error('Failed to reorder todos:', error);
-      // Reload todos to ensure consistency
-      await loadTodos();
-    }
-  };
+  const todosContainerRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMounted(true);
     loadTodos();
   }, []);
 
-  if (!mounted) return null;
+  // Add drag and drop effect after todos load
+  useEffect(() => {
+    if (!todosContainerRef.current) return;
 
-  const filteredTodos = todos
-    .filter((todo) => {
-      if (filter === 'all') return true;
-      if (filter === 'done') return todo.completed;
-      if (filter === 'active') return !todo.completed;
-      return todo.categoryId === filter.toLowerCase();
-    })
-    .sort((a, b) => a.order - b.order);
+    const todoItems = todosContainerRef.current.querySelectorAll('[data-todo-item]');
+
+    todoItems.forEach((item, index) => {
+      draggable({
+        element: item,
+        getInitialData: () => ({ index }),
+      });
+    });
+
+    const cleanup = dropTargetForElements({
+      element: todosContainerRef.current,
+      onDrop: async ({ source, location }) => {
+        const sourceIndex = source.data.index;
+        const overElement = location.current.dropTargets[0];
+        if (!overElement) return;
+
+        const todoElements = Array.from(todoItems);
+        const destinationIndex = todoElements.indexOf(overElement);
+
+        if (sourceIndex !== destinationIndex) {
+          const newTodos = Array.from(todos);
+          const [removed] = newTodos.splice(sourceIndex, 1);
+          newTodos.splice(destinationIndex, 0, removed);
+
+          const updatedTodos = newTodos.map((todo, idx) => ({
+            ...todo,
+            order: idx,
+          }));
+
+          setTodos(updatedTodos);
+          for (const todo of updatedTodos) {
+            await updateTodo(todo);
+          }
+        }
+      },
+    });
+
+    return cleanup;
+  }, [todos]);
+
+  const loadTodos = async () => {
+    try {
+      const loadedTodos = await getAllTodos();
+      setTodos(loadedTodos.sort((a, b) => (a.order || 0) - (b.order || 0)));
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
+  const handleAddTodo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTodo.trim()) {
+      setAlert('TYPE SOMETHING');
+      setTimeout(() => setAlert(''), 3000);
+      return;
+    }
+
+    const todo: Todo = {
+      id: Date.now(),
+      text: newTodo.trim(),
+      completed: false,
+      createdAt: new Date().toISOString(),
+      categoryId: selectedCategory,
+      order: todos.length,
+      subtasks: [],
+    };
+
+    try {
+      await addTodo(todo);
+      await loadTodos();
+      setNewTodo('');
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
+  const handleToggleTodo = async (todo: Todo) => {
+    try {
+      await updateTodo({
+        ...todo,
+        completed: !todo.completed,
+      });
+      await loadTodos();
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
+  const handleDeleteTodo = async (id: number) => {
+    try {
+      await deleteTodo(id);
+      await loadTodos();
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
+  const toggleVoiceInput = () => {
+    if (!isListening) {
+      startListening();
+    } else {
+      stopListening();
+    }
+  };
+
+  const startListening = () => {
+    if ('webkitSpeechRecognition' in window) {
+      const recognition = new webkitSpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+
+      recognition.onresult = (event) => {
+        const text = event.results[0][0].transcript;
+        setNewTodo(text);
+        setIsListening(false);
+      };
+
+      recognition.onerror = () => {
+        setIsListening(false);
+      };
+
+      recognition.start();
+      setIsListening(true);
+    }
+  };
+
+  const stopListening = () => {
+    setIsListening(false);
+  };
+
+  if (!mounted) {
+    return null;
+  }
+
+  const filteredTodos = todos.filter((todo) => {
+    if (filter === 'all') return true;
+    if (filter === 'done') return todo.completed;
+    if (filter === 'active') return !todo.completed;
+    return todo.categoryId === filter.toLowerCase();
+  });
 
   return (
     <div className="min-h-screen bg-white dark:bg-black font-mono text-black dark:text-white">
@@ -191,7 +206,7 @@ const TodoApp = () => {
                 type="text"
                 placeholder="WHAT NEEDS TO BE DONE?"
                 value={newTodo}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewTodo(e.target.value)}
+                onChange={(e) => setNewTodo(e.target.value)}
                 className="flex-1 border-2 border-black dark:border-white bg-white dark:bg-black text-black dark:text-white placeholder:text-black/50 dark:placeholder:text-white/50"
               />
               <Button
@@ -209,28 +224,20 @@ const TodoApp = () => {
               </Button>
             </div>
 
-            <div className="mt-4">
-              <p className="text-sm mb-2">
-                Category:{' '}
-                {selectedCategory
-                  ? DEFAULT_CATEGORIES.find((c) => c.id === selectedCategory)?.name
-                  : 'PERSONAL'}
-              </p>
-              <div className="flex gap-2">
-                {DEFAULT_CATEGORIES.map((category) => (
-                  <Button
-                    key={category.id}
-                    onClick={() => setSelectedCategory(category.id)}
-                    className={`border-2 px-4 py-2 ${
-                      selectedCategory === category.id
-                        ? 'bg-black dark:bg-white text-white dark:text-black'
-                        : 'border-black dark:border-white text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black'
-                    }`}
-                  >
-                    {category.name}
-                  </Button>
-                ))}
-              </div>
+            <div className="flex gap-2 mt-4">
+              {DEFAULT_CATEGORIES.map((category) => (
+                <Button
+                  key={category.id}
+                  onClick={() => setSelectedCategory(category.id)}
+                  className={`border-2 ${
+                    selectedCategory === category.id
+                      ? 'bg-black dark:bg-white text-white dark:text-black'
+                      : 'border-black dark:border-white text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black'
+                  }`}
+                >
+                  {category.name}
+                </Button>
+              ))}
             </div>
           </form>
 
@@ -240,7 +247,7 @@ const TodoApp = () => {
                 <Button
                   key={filterName}
                   onClick={() => setFilter(filterName.toLowerCase())}
-                  className={`border-2 px-4 py-2 ${
+                  className={`border-2 ${
                     filter === filterName.toLowerCase()
                       ? 'bg-black dark:bg-white text-white dark:text-black'
                       : 'border-black dark:border-white text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black'
@@ -252,27 +259,40 @@ const TodoApp = () => {
             )}
           </div>
 
-          {mounted && filteredTodos.length > 0 ? (
-            <DragDropContext onDragEnd={handleDragEnd}>
-              <div className="space-y-2">
-                <DraggableTodoList
-                  todos={filteredTodos}
-                  onToggle={handleToggleTodo}
-                  onDelete={handleDeleteTodo}
-                  categories={DEFAULT_CATEGORIES}
-                />
-              </div>
-            </DragDropContext>
-          ) : (
-            <div className="space-y-2">
-              {todos.length === 0 && (
-                <div className="text-center py-12 border-4 border-black dark:border-white">
-                  <p className="text-3xl font-bold text-black dark:text-white">NO_TODOS</p>
-                  <p className="text-xl text-black dark:text-white">ADD_ONE_ABOVE</p>
+          <div className="space-y-2" ref={todosContainerRef}>
+            {filteredTodos.map((todo, index) => (
+              <div
+                key={todo.id}
+                data-todo-item
+                className="flex items-center justify-between p-4 border-2 border-black dark:border-white bg-white dark:bg-black text-black dark:text-white cursor-move"
+              >
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={() => handleToggleTodo(todo)}
+                    className="text-black dark:text-white hover:text-black/70 dark:hover:text-white/70"
+                  >
+                    {todo.completed ? <CheckCircle2 /> : <Circle />}
+                  </button>
+                  <span className={todo.completed ? 'line-through opacity-50' : ''}>
+                    {todo.text}
+                  </span>
                 </div>
-              )}
-            </div>
-          )}
+                <Button
+                  onClick={() => handleDeleteTodo(todo.id)}
+                  className="border-2 border-black dark:border-white text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+
+            {todos.length === 0 && (
+              <div className="text-center py-12 border-4 border-black dark:border-white">
+                <p className="text-3xl font-bold text-black dark:text-white">NO_TODOS</p>
+                <p className="text-xl text-black dark:text-white">ADD_ONE_ABOVE</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
