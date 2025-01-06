@@ -1,64 +1,78 @@
-'use client'
+'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Mic, MicOff } from 'lucide-react';
-import { Button } from './ui/button';
+import { Button } from '@/components/ui/button';
+import type { SpeechRecognition, SpeechRecognitionEvent } from '@/lib/speech-types';
 
-interface Props {
-  onResult: (text: string) => void;
-}
-
-export const VoiceInput = ({ onResult }: Props) => {
+export function VoiceInput({ onTranscript }: { onTranscript: (text: string) => void }) {
   const [isListening, setIsListening] = useState(false);
-  const [recognition, setRecognition] = useState<any>(null);
+  const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
 
-  const startListening = () => {
-    if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
       const recognition = new SpeechRecognition();
-      
-      recognition.continuous = false;
-      recognition.interimResults = false;
-      
-      recognition.onresult = (event: any) => {
-        const text = event.results[0][0].transcript;
-        onResult(text);
-        setIsListening(false);
-      };
-      
-      recognition.onerror = () => {
-        setIsListening(false);
-      };
-      
-      recognition.start();
-      setIsListening(true);
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
       setRecognition(recognition);
     }
-  };
+  }, []);
 
-  const stopListening = () => {
-    if (recognition) {
+  const handleResult = useCallback(
+    (event: SpeechRecognitionEvent) => {
+      const transcript = Array.from(event.results)
+        .map((result) => result[0].transcript)
+        .join('');
+
+      if (event.results[0].isFinal) {
+        onTranscript(transcript);
+      }
+    },
+    [onTranscript]
+  );
+
+  const toggleListening = useCallback(() => {
+    if (!recognition) return;
+
+    if (isListening) {
       recognition.stop();
       setIsListening(false);
-    }
-  };
-
-  const toggleListening = () => {
-    if (isListening) {
-      stopListening();
     } else {
-      startListening();
+      recognition.start();
+      setIsListening(true);
     }
-  };
+  }, [isListening, recognition]);
+
+  useEffect(() => {
+    if (!recognition) return;
+
+    recognition.onresult = handleResult;
+    recognition.onerror = () => {
+      setIsListening(false);
+    };
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    return () => {
+      recognition.stop();
+    };
+  }, [recognition, handleResult]);
+
+  if (!recognition) {
+    return null;
+  }
 
   return (
     <Button
+      variant="outline"
+      size="icon"
       onClick={toggleListening}
-      className={`rounded-none border-4 border-black p-2 ${
-        isListening ? 'bg-black text-white' : 'bg-white text-black'
-      }`}
+      className={isListening ? 'bg-red-100 hover:bg-red-200' : ''}
     >
-      {isListening ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
+      {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
     </Button>
   );
-};
+}
