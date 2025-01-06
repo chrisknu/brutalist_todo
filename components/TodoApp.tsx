@@ -22,15 +22,20 @@ const TodoApp = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [newTodo, setNewTodo] = useState('');
   const [alert, setAlert] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>();
+  const [selectedCategory, setSelectedCategory] = useState<string>('personal');
   const [filter, setFilter] = useState<string>('all');
   const [isListening, setIsListening] = useState(false);
   const { theme, setTheme } = useTheme();
 
   const loadTodos = async () => {
     try {
-      const todos = await getAllTodos();
-      setTodos(todos.sort((a: Todo, b: Todo) => (a.order || 0) - (b.order || 0)));
+      const loadedTodos = await getAllTodos();
+      // Ensure all todos have an order
+      const todosWithOrder = loadedTodos.map((todo, index) => ({
+        ...todo,
+        order: todo.order ?? index,
+      }));
+      setTodos(todosWithOrder.sort((a, b) => a.order - b.order));
     } catch (error) {
       setAlert('Failed to load todos');
       console.error('Failed to load todos:', error);
@@ -42,16 +47,18 @@ const TodoApp = () => {
     if (!newTodo.trim()) return;
 
     try {
-      const todo = await addTodo({
+      const newTodoItem = {
         id: crypto.randomUUID(),
         text: newTodo,
         completed: false,
-        categoryId: selectedCategory || 'personal',
+        categoryId: selectedCategory,
         createdAt: new Date().toISOString(),
         subtasks: [],
         order: todos.length,
-      });
-      setTodos([...todos, todo]);
+      };
+
+      const addedTodo = await addTodo(newTodoItem);
+      setTodos((prev) => [...prev, addedTodo].sort((a, b) => a.order - b.order));
       setNewTodo('');
     } catch (error) {
       setAlert('Failed to add todo');
@@ -65,7 +72,7 @@ const TodoApp = () => {
         ...todo,
         completed: !todo.completed,
       });
-      setTodos(todos.map((t) => (t.id === todo.id ? updatedTodo : t)));
+      setTodos((prev) => prev.map((t) => (t.id === todo.id ? updatedTodo : t)));
     } catch (error) {
       setAlert('Failed to update todo');
       console.error('Failed to update todo:', error);
@@ -75,7 +82,7 @@ const TodoApp = () => {
   const handleDeleteTodo = async (id: string) => {
     try {
       await deleteTodo(id);
-      setTodos(todos.filter((todo) => todo.id !== id));
+      setTodos((prev) => prev.filter((todo) => todo.id !== id));
     } catch (error) {
       setAlert('Failed to delete todo');
       console.error('Failed to delete todo:', error);
@@ -88,40 +95,44 @@ const TodoApp = () => {
   };
 
   const handleDragEnd = async (result: any) => {
-    if (!result.destination || result.source.droppableId !== 'TODOS_LIST') return;
+    if (!result.destination) return;
 
-    const filteredTodos = todos
-      .filter((todo) => {
-        if (filter === 'all') return true;
-        if (filter === 'done') return todo.completed;
-        if (filter === 'active') return !todo.completed;
-        return todo.categoryId === filter.toLowerCase();
-      })
-      .sort((a, b) => (a.order || 0) - (b.order || 0));
-
-    const items = Array.from(todos);
-    const sourceIndex = todos.findIndex((t) => t.id === filteredTodos[result.source.index].id);
-    const destinationIndex = todos.findIndex(
-      (t) => t.id === filteredTodos[result.destination.index].id
-    );
-
-    const [reorderedItem] = items.splice(sourceIndex, 1);
-    items.splice(destinationIndex, 0, reorderedItem);
-
-    // Update the order of all affected items
-    const updatedItems = items.map((item, index) => ({
-      ...item,
-      order: index,
-    }));
-
-    setTodos(updatedItems);
-
-    // Persist the new order to the database
     try {
-      await Promise.all(updatedItems.map((todo) => updateTodo(todo)));
+      const { source, destination } = result;
+
+      // Get the current filtered and sorted list
+      const filteredTodos = todos
+        .filter((todo) => {
+          if (filter === 'all') return true;
+          if (filter === 'done') return todo.completed;
+          if (filter === 'active') return !todo.completed;
+          return todo.categoryId === filter.toLowerCase();
+        })
+        .sort((a, b) => a.order - b.order);
+
+      // Find the actual todos being moved
+      const [movedTodo] = filteredTodos.splice(source.index, 1);
+      filteredTodos.splice(destination.index, 0, movedTodo);
+
+      // Update orders for all todos
+      const updatedTodos = todos.map((todo) => {
+        const filteredIndex = filteredTodos.findIndex((t) => t.id === todo.id);
+        return {
+          ...todo,
+          order: filteredIndex !== -1 ? filteredIndex : todo.order,
+        };
+      });
+
+      // Update state immediately for smooth UI
+      setTodos(updatedTodos);
+
+      // Persist changes to database
+      await Promise.all(updatedTodos.map((todo) => updateTodo(todo)));
     } catch (error) {
-      setAlert('Failed to update todo order');
-      console.error('Failed to update todo order:', error);
+      setAlert('Failed to reorder todos');
+      console.error('Failed to reorder todos:', error);
+      // Reload todos to ensure consistency
+      await loadTodos();
     }
   };
 
@@ -130,9 +141,16 @@ const TodoApp = () => {
     loadTodos();
   }, []);
 
-  if (!mounted) {
-    return null;
-  }
+  if (!mounted) return null;
+
+  const filteredTodos = todos
+    .filter((todo) => {
+      if (filter === 'all') return true;
+      if (filter === 'done') return todo.completed;
+      if (filter === 'active') return !todo.completed;
+      return todo.categoryId === filter.toLowerCase();
+    })
+    .sort((a, b) => a.order - b.order);
 
   return (
     <div className="min-h-screen bg-white dark:bg-black font-mono text-black dark:text-white">
@@ -224,19 +242,11 @@ const TodoApp = () => {
           <DragDropContext onDragEnd={handleDragEnd}>
             <div className="space-y-2">
               <DraggableTodoList
-                todos={todos
-                  .filter((todo) => {
-                    if (filter === 'all') return true;
-                    if (filter === 'done') return todo.completed;
-                    if (filter === 'active') return !todo.completed;
-                    return todo.categoryId === filter.toLowerCase();
-                  })
-                  .sort((a, b) => (a.order || 0) - (b.order || 0))}
+                todos={filteredTodos}
                 onToggle={handleToggleTodo}
                 onDelete={handleDeleteTodo}
                 categories={DEFAULT_CATEGORIES}
               />
-
               {todos.length === 0 && (
                 <div className="text-center py-12 border-4 border-black dark:border-white">
                   <p className="text-3xl font-bold text-black dark:text-white">NO_TODOS</p>
