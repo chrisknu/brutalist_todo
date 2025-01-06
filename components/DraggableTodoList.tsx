@@ -1,0 +1,84 @@
+import React from 'react';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { Todo } from '../lib/types';
+import { Button } from './ui/button';
+import { CheckCircle2, Circle, Tag, Trash2 } from 'lucide-react';
+
+interface Props {
+  todos: Todo[];
+  onDragEnd: (result: any) => void;
+  onToggle: (todo: Todo) => void;
+  onDelete: (id: number) => void;
+  categories: any[];
+}
+
+export const DraggableTodoList = ({ todos, onDragEnd, onToggle, onDelete, categories }: Props) => {
+  return (
+    <DragDropContext onDragEnd={onDragEnd}>
+      <Droppable droppableId="todo-list">
+        {(provided) => (
+          <div
+            {...provided.droppableProps}
+            ref={provided.innerRef}
+            className="space-y-4"
+          >
+            {todos.map((todo, index) => (
+              <Draggable key={todo.id} draggableId={todo.id.toString()} index={index}>
+                {(provided) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.draggableProps}
+                    {...provided.dragHandleProps}
+                    className={`
+                      flex items-center justify-between p-4 
+                      border-4 border-black
+                      ${todo.completed ? 'bg-black text-white' : 'bg-white text-black'}
+                    `}
+                  >
+                    <div className="flex items-center gap-4">
+                      <button
+                        onClick={() => onToggle(todo)}
+                        className="focus:outline-none"
+                      >
+                        {todo.completed ? (
+                          <CheckCircle2 className="w-6 h-6" />
+                        ) : (
+                          <Circle className="w-6 h-6" />
+                        )}
+                      </button>
+                      <div className="flex items-center gap-2">
+                        {todo.categoryId && (
+                          <Tag 
+                            size={16} 
+                            style={{ 
+                              color: categories.find(c => c.id === todo.categoryId)?.color 
+                            }} 
+                          />
+                        )}
+                        <span className={`text-lg ${todo.completed ? 'line-through' : ''}`}>
+                          {todo.text}
+                        </span>
+                      </div>
+                    </div>
+                    <Button
+                      onClick={() => onDelete(todo.id)}
+                      className={`
+                        rounded-none border-2 border-current p-2
+                        ${todo.completed ? 
+                          'text-white hover:bg-white hover:text-black' : 
+                          'text-black hover:bg-black hover:text-white'}
+                      `}
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </Button>
+                  </div>
+                )}
+              </Draggable>
+            ))}
+            {provided.placeholder}
+          </div>
+        )}
+      </Droppable>
+    </DragDropContext>
+  );
+};

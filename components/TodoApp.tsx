@@ -4,8 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, CheckCircle2, Circle, Mic, MicOff } from 'lucide-react';
 import { DragDropContext } from 'react-beautiful-dnd';
 import { useTheme } from 'next-themes';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import { Input } from './ui/input';
+import { Button } from './ui/button';
 import { getAllTodos, addTodo, updateTodo, deleteTodo } from '../lib/db';
 import { DraggableTodoList } from './DraggableTodoList';
 import type { Todo, Category } from '../lib/types';
@@ -48,6 +48,8 @@ const TodoApp = () => {
         completed: false,
         categoryId: selectedCategory || 'personal',
         createdAt: new Date().toISOString(),
+        subtasks: [],
+        order: todos.length,
       });
       setTodos([...todos, todo]);
       setNewTodo('');
@@ -138,20 +140,28 @@ const TodoApp = () => {
               </Button>
             </div>
 
-            <div className="flex gap-2 mt-4">
-              {DEFAULT_CATEGORIES.map((category) => (
-                <Button
-                  key={category.id}
-                  onClick={() => setSelectedCategory(category.id)}
-                  className={`border-2 ${
-                    selectedCategory === category.id
-                      ? 'bg-black dark:bg-white text-white dark:text-black'
-                      : 'border-black dark:border-white text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black'
-                  }`}
-                >
-                  {category.name}
-                </Button>
-              ))}
+            <div className="mt-4">
+              <p className="text-sm mb-2">
+                Category:{' '}
+                {selectedCategory
+                  ? DEFAULT_CATEGORIES.find((c) => c.id === selectedCategory)?.name
+                  : 'PERSONAL'}
+              </p>
+              <div className="flex gap-2">
+                {DEFAULT_CATEGORIES.map((category) => (
+                  <Button
+                    key={category.id}
+                    onClick={() => setSelectedCategory(category.id)}
+                    className={`border-2 px-4 py-2 ${
+                      selectedCategory === category.id
+                        ? 'bg-black dark:bg-white text-white dark:text-black'
+                        : 'border-black dark:border-white text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black'
+                    }`}
+                  >
+                    {category.name}
+                  </Button>
+                ))}
+              </div>
             </div>
           </form>
 
@@ -161,7 +171,7 @@ const TodoApp = () => {
                 <Button
                   key={filterName}
                   onClick={() => setFilter(filterName.toLowerCase())}
-                  className={`border-2 ${
+                  className={`border-2 px-4 py-2 ${
                     filter === filterName.toLowerCase()
                       ? 'bg-black dark:bg-white text-white dark:text-black'
                       : 'border-black dark:border-white text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black'
@@ -193,9 +203,15 @@ const TodoApp = () => {
                     >
                       {todo.completed ? <CheckCircle2 /> : <Circle />}
                     </button>
-                    <span className={todo.completed ? 'line-through opacity-50' : ''}>
-                      {todo.text}
-                    </span>
+                    <div className="flex flex-col">
+                      <span className={todo.completed ? 'line-through opacity-50' : ''}>
+                        {todo.text}
+                      </span>
+                      <span className="text-xs opacity-60">
+                        {DEFAULT_CATEGORIES.find((c) => c.id === todo.categoryId)?.name ||
+                          'PERSONAL'}
+                      </span>
+                    </div>
                   </div>
                   <Button
                     onClick={() => handleDeleteTodo(todo.id)}

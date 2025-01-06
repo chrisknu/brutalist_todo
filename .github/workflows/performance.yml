@@ -1,0 +1,17 @@
+name: Performance Tests
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: treosh/lighthouse-ci-action@v9
+        with:
+          configPath: './.github/lighthouse.json'
+          uploadArtifacts: true
+          temporaryPublicStorage: true
