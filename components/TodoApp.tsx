@@ -11,6 +11,7 @@ import {
   draggable,
   dropTargetForElements,
 } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import type { SpeechRecognition, SpeechRecognitionEvent } from '../lib/speech-types';
 
 const DEFAULT_CATEGORIES: Category[] = [
   { id: 'work', name: 'WORK', color: '#000000' },
@@ -43,7 +44,7 @@ const TodoApp = () => {
 
     todoItems.forEach((item, index) => {
       draggable({
-        element: item,
+        element: item as HTMLElement,
         getInitialData: () => ({ index }),
       });
     });
@@ -51,12 +52,12 @@ const TodoApp = () => {
     const cleanup = dropTargetForElements({
       element: todosContainerRef.current,
       onDrop: async ({ source, location }) => {
-        const sourceIndex = source.data.index;
+        const sourceIndex = source.data.index as number;
         const overElement = location.current.dropTargets[0];
         if (!overElement) return;
 
         const todoElements = Array.from(todoItems);
-        const destinationIndex = todoElements.indexOf(overElement);
+        const destinationIndex = todoElements.indexOf(overElement.element as HTMLElement);
 
         if (sourceIndex !== destinationIndex) {
           const newTodos = Array.from(todos);
@@ -82,7 +83,7 @@ const TodoApp = () => {
   const loadTodos = async () => {
     try {
       const loadedTodos = await getAllTodos();
-      setTodos(loadedTodos.sort((a, b) => (a.order || 0) - (b.order || 0)));
+      setTodos(loadedTodos.sort((a: Todo, b: Todo) => (a.order || 0) - (b.order || 0)));
     } catch (error) {
       console.error('Error:', error);
     }
@@ -90,28 +91,24 @@ const TodoApp = () => {
 
   const handleAddTodo = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTodo.trim()) {
-      setAlert('TYPE SOMETHING');
-      setTimeout(() => setAlert(''), 3000);
-      return;
-    }
-
-    const todo: Todo = {
-      id: Date.now(),
-      text: newTodo.trim(),
-      completed: false,
-      createdAt: new Date().toISOString(),
-      categoryId: selectedCategory,
-      order: todos.length,
-      subtasks: [],
-    };
+    if (!newTodo.trim()) return;
 
     try {
-      await addTodo(todo);
-      await loadTodos();
+      const todo: Omit<Todo, 'id'> = {
+        text: newTodo,
+        completed: false,
+        createdAt: new Date().toISOString(),
+        categoryId: selectedCategory,
+        order: todos.length,
+        subtasks: [],
+      };
+
+      const addedTodo = await addTodo(todo);
+      setTodos([...todos, addedTodo]);
       setNewTodo('');
+      setAlert('Todo added successfully');
     } catch (error) {
-      console.error('Error:', error);
+      setAlert('Failed to add todo');
     }
   };
 
@@ -127,12 +124,13 @@ const TodoApp = () => {
     }
   };
 
-  const handleDeleteTodo = async (id: number) => {
+  const handleDeleteTodo = async (id: string) => {
     try {
       await deleteTodo(id);
-      await loadTodos();
+      setTodos(todos.filter((todo) => todo.id !== id));
+      setAlert('Todo deleted successfully');
     } catch (error) {
-      console.error('Error:', error);
+      setAlert('Failed to delete todo');
     }
   };
 
@@ -146,11 +144,11 @@ const TodoApp = () => {
 
   const startListening = () => {
     if ('webkitSpeechRecognition' in window) {
-      const recognition = new webkitSpeechRecognition();
+      const recognition = new (window as any).webkitSpeechRecognition() as SpeechRecognition;
       recognition.continuous = false;
       recognition.interimResults = false;
 
-      recognition.onresult = (event) => {
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
         const text = event.results[0][0].transcript;
         setNewTodo(text);
         setIsListening(false);
@@ -173,11 +171,15 @@ const TodoApp = () => {
     return null;
   }
 
-  const filteredTodos = todos.filter((todo) => {
+  // Sort todos by order
+  const sortedTodos = [...todos].sort((a: Todo, b: Todo) => a.order - b.order);
+
+  // Filter todos based on current filter
+  const filteredTodos = sortedTodos.filter((todo) => {
     if (filter === 'all') return true;
     if (filter === 'done') return todo.completed;
     if (filter === 'active') return !todo.completed;
-    return todo.categoryId === filter.toLowerCase();
+    return todo.categoryId === filter;
   });
 
   return (

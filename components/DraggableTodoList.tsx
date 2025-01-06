@@ -3,7 +3,6 @@ import {
   draggable,
   dropTargetForElements,
   monitorForElements,
-  type DropTargetFeedbackArgs,
 } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import type {
@@ -58,7 +57,7 @@ export const DraggableTodoList = ({ todos, onReorder, onToggle, onDelete, catego
         dropTargetForElements({
           element: item,
           getData: () => ({ index }),
-          canDrop: (args: DropTargetFeedbackArgs) => args.source.data.type === 'todo-item',
+          canDrop: (args) => args.source.data.type === 'todo-item',
           getIsSticky: () => true,
         }),
         // Monitor for drag operations
