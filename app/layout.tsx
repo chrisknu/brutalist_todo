@@ -1,30 +1,28 @@
-import { Inter } from 'next/font/google'
-import './globals.css'
-import { Providers } from './providers'
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import './globals.css';
+import { Providers } from './providers';
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ['latin'] });
 
-export const metadata = {
-  title: 'Brutalist Todo',
-  description: 'A minimalist todo app with a brutalist design',
-  manifest: '/manifest.json'
+export const metadata: Metadata = {
+  title: 'Todo App',
+  description: 'A simple todo app built with Next.js',
+};
+
+interface RootLayoutProps {
+  children: React.ReactNode;
 }
 
-export const viewport = {
-  themeColor: '#000000'
-}
-
-export default function RootLayout({ children }) {
+export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="manifest" href="/manifest.json" />
+        <link rel="icon" href="/favicon.ico" />
       </head>
       <body className={inter.className}>
-        <Providers>
-          {children}
-        </Providers>
+        <Providers>{children}</Providers>
       </body>
     </html>
-  )
+  );
 }
