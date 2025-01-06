@@ -25,7 +25,7 @@ const TodoItem = memo(
     onDelete: (id: string) => void;
     categories: any[];
   }) => (
-    <Draggable draggableId={todo.id} index={index}>
+    <Draggable draggableId={`todo-${todo.id}`} index={index}>
       {(provided, snapshot) => (
         <div
           ref={provided.innerRef}

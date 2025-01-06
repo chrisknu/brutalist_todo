@@ -239,14 +239,19 @@ const TodoApp = () => {
             )}
           </div>
 
-          <DragDropContext onDragEnd={handleDragEnd}>
+          {mounted && filteredTodos.length > 0 ? (
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <div className="space-y-2">
+                <DraggableTodoList
+                  todos={filteredTodos}
+                  onToggle={handleToggleTodo}
+                  onDelete={handleDeleteTodo}
+                  categories={DEFAULT_CATEGORIES}
+                />
+              </div>
+            </DragDropContext>
+          ) : (
             <div className="space-y-2">
-              <DraggableTodoList
-                todos={filteredTodos}
-                onToggle={handleToggleTodo}
-                onDelete={handleDeleteTodo}
-                categories={DEFAULT_CATEGORIES}
-              />
               {todos.length === 0 && (
                 <div className="text-center py-12 border-4 border-black dark:border-white">
                   <p className="text-3xl font-bold text-black dark:text-white">NO_TODOS</p>
@@ -254,7 +259,7 @@ const TodoApp = () => {
                 </div>
               )}
             </div>
-          </DragDropContext>
+          )}
         </div>
       </div>
     </div>
