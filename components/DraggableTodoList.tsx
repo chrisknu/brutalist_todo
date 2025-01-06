@@ -1,5 +1,11 @@
 import React, { memo } from 'react';
-import { Droppable, Draggable } from 'react-beautiful-dnd';
+import {
+  Droppable,
+  Draggable,
+  DroppableProvided,
+  DraggableProvided,
+  DraggableStateSnapshot,
+} from 'react-beautiful-dnd';
 import { Todo } from '../lib/types';
 import { Button } from './ui/button';
 import { CheckCircle2, Circle, Tag, Trash2 } from 'lucide-react';
@@ -26,19 +32,19 @@ const TodoItem = memo(
     categories: any[];
   }) => (
     <Draggable draggableId={`todo-${todo.id}`} index={index}>
-      {(provided, snapshot) => (
+      {(provided: DraggableProvided, snapshot: DraggableStateSnapshot) => (
         <div
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           className={`
-          flex items-center justify-between p-4 
-          border-4 border-black dark:border-white
-          ${todo.completed ? 'bg-black text-white' : 'bg-white text-black'}
-          ${snapshot.isDragging ? 'opacity-50' : ''}
-          cursor-move
-          transition-all
-        `}
+            flex items-center justify-between p-4 
+            border-4 border-black dark:border-white
+            ${todo.completed ? 'bg-black text-white' : 'bg-white text-black'}
+            ${snapshot.isDragging ? 'opacity-50' : ''}
+            cursor-move
+            transition-all
+          `}
         >
           <div className="flex items-center gap-4">
             <button onClick={() => onToggle(todo)} className="focus:outline-none">
@@ -63,13 +69,13 @@ const TodoItem = memo(
           <Button
             onClick={() => onDelete(todo.id)}
             className={`
-            rounded-none border-2 border-current p-2
-            ${
-              todo.completed
-                ? 'text-white hover:bg-white hover:text-black'
-                : 'text-black hover:bg-black hover:text-white'
-            }
-          `}
+              rounded-none border-2 border-current p-2
+              ${
+                todo.completed
+                  ? 'text-white hover:bg-white hover:text-black'
+                  : 'text-black hover:bg-black hover:text-white'
+              }
+            `}
           >
             <Trash2 className="w-5 h-5" />
           </Button>
@@ -82,7 +88,13 @@ const TodoItem = memo(
 TodoItem.displayName = 'TodoItem';
 
 const DroppableComponent = memo(
-  ({ provided, todos, onToggle, onDelete, categories }: Props & { provided: any }) => (
+  ({
+    provided,
+    todos,
+    onToggle,
+    onDelete,
+    categories,
+  }: Props & { provided: DroppableProvided }) => (
     <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-4">
       {todos.map((todo, index) => (
         <TodoItem
@@ -104,7 +116,7 @@ DroppableComponent.displayName = 'DroppableComponent';
 const DraggableTodoList = memo(({ todos, onToggle, onDelete, categories }: Props) => {
   return (
     <Droppable droppableId="droppable-todos">
-      {(provided) => (
+      {(provided: DroppableProvided) => (
         <DroppableComponent
           provided={provided}
           todos={todos}

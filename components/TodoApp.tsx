@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { DragDropContext, DropResult } from 'react-beautiful-dnd';
 import { Plus, Trash2, CheckCircle2, Circle, Mic, MicOff } from 'lucide-react';
-import { DragDropContext } from 'react-beautiful-dnd';
 import { useTheme } from 'next-themes';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
@@ -94,12 +94,18 @@ const TodoApp = () => {
     setIsListening(!isListening);
   };
 
-  const handleDragEnd = async (result: any) => {
-    if (!result.destination || result.source.droppableId !== 'droppable-todos') return;
+  const handleDragEnd = async (result: DropResult) => {
+    const { destination, source, draggableId } = result;
+
+    // Dropped outside the list or no movement
+    if (
+      !destination ||
+      (destination.droppableId === source.droppableId && destination.index === source.index)
+    ) {
+      return;
+    }
 
     try {
-      const { source, destination } = result;
-
       // Get the current filtered and sorted list
       const filteredTodos = todos
         .filter((todo) => {
@@ -110,13 +116,20 @@ const TodoApp = () => {
         })
         .sort((a, b) => a.order - b.order);
 
-      // Find the actual todos being moved
-      const [movedTodo] = filteredTodos.splice(source.index, 1);
-      filteredTodos.splice(destination.index, 0, movedTodo);
+      // Find the actual todo being moved
+      const todoId = draggableId.replace('todo-', '');
+      const movedTodo = todos.find((t) => t.id === todoId);
+
+      if (!movedTodo) return;
+
+      // Create new array with updated positions
+      const newFilteredTodos = Array.from(filteredTodos);
+      newFilteredTodos.splice(source.index, 1);
+      newFilteredTodos.splice(destination.index, 0, movedTodo);
 
       // Update orders for all todos
       const updatedTodos = todos.map((todo) => {
-        const filteredIndex = filteredTodos.findIndex((t) => t.id === todo.id);
+        const filteredIndex = newFilteredTodos.findIndex((t) => t.id === todo.id);
         return {
           ...todo,
           order: filteredIndex !== -1 ? filteredIndex : todo.order,
