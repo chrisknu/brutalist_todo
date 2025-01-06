@@ -18,14 +18,14 @@ interface Props {
   todos: Todo[];
   onReorder: (sourceIndex: number, destinationIndex: number) => void;
   onToggle: (todo: Todo) => void;
-  onDelete: (id: number) => void;
+  onDelete: (id: string) => void;
   categories: Category[];
 }
 
 interface DragData extends Record<string, unknown> {
   index: number;
   type: 'todo-item';
-  itemId: number;
+  itemId: string;
 }
 
 export const DraggableTodoList = ({ todos, onReorder, onToggle, onDelete, categories }: Props) => {
@@ -112,7 +112,7 @@ export const DraggableTodoList = ({ todos, onReorder, onToggle, onDelete, catego
             <span className={todo.completed ? 'line-through opacity-50' : ''}>{todo.text}</span>
           </div>
           <Button
-            onClick={() => onDelete(Number(todo.id))}
+            onClick={() => onDelete(todo.id)}
             className="border-2 border-black dark:border-white text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black"
           >
             <Trash2 className="h-4 w-4" />
