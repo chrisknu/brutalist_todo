@@ -190,25 +190,21 @@ const TodoApp = () => {
   });
 
   return (
-    <div className="min-h-screen bg-white dark:bg-black font-mono text-black dark:text-white">
-      <div className="max-w-4xl mx-auto border-4 border-black dark:border-white">
-        <div className="bg-black dark:bg-white p-4 flex justify-between items-center">
-          <h1 className="text-2xl text-white dark:text-black font-bold">TODO_OR_NOT_TODO</h1>
+    <div className="min-h-screen bg-background text-foreground font-mono">
+      <div className="max-w-4xl mx-auto border-4 border-border">
+        <div className="bg-foreground p-4 flex justify-between items-center">
+          <h1 className="text-2xl text-background font-bold">TODO_OR_NOT_TODO</h1>
           <Button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="border-2 border-white dark:border-black text-white dark:text-black hover:bg-white hover:text-black dark:hover:bg-black dark:hover:text-white transition-colors duration-200"
+            className="border-2 border-background text-background hover:bg-background hover:text-foreground transition-colors duration-200"
           >
             {theme === 'dark' ? 'LIGHT' : 'DARK'}
           </Button>
         </div>
 
-        <div className="p-4 bg-white dark:bg-black text-black dark:text-white">
+        <div className="p-4 bg-background text-foreground">
           <div className="h-16 mb-4">
-            {alert && (
-              <div className="bg-black dark:bg-white text-white dark:text-black p-4 font-bold">
-                {alert}
-              </div>
-            )}
+            {alert && <div className="bg-foreground text-background p-4 font-bold">{alert}</div>}
           </div>
 
           <form onSubmit={handleAddTodo} className="mb-6">
@@ -218,18 +214,18 @@ const TodoApp = () => {
                 placeholder="WHAT NEEDS TO BE DONE?"
                 value={newTodo}
                 onChange={(e) => setNewTodo(e.target.value)}
-                className="flex-1 border-2 border-black dark:border-white bg-white dark:bg-black text-black dark:text-white placeholder:text-black/70 dark:placeholder:text-white/70"
+                className="flex-1 border-2 border-border bg-background text-foreground placeholder:text-foreground/70"
               />
               <Button
                 type="button"
                 onClick={toggleVoiceInput}
-                className="border-2 border-black dark:border-white text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors duration-200"
+                className="border-2 border-border text-foreground hover:bg-foreground hover:text-background transition-colors duration-200"
               >
                 {isListening ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
               </Button>
               <Button
                 type="submit"
-                className="border-2 border-black dark:border-white text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors duration-200"
+                className="border-2 border-border text-foreground hover:bg-foreground hover:text-background transition-colors duration-200"
               >
                 ADD
               </Button>
@@ -242,8 +238,8 @@ const TodoApp = () => {
                   onClick={() => setSelectedCategory(category.id)}
                   className={`border-2 transition-colors duration-200 ${
                     selectedCategory === category.id
-                      ? 'bg-black dark:bg-white text-white dark:text-black font-bold'
-                      : 'border-black dark:border-white text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black'
+                      ? 'bg-foreground text-background font-bold'
+                      : 'border-border text-foreground hover:bg-foreground hover:text-background'
                   }`}
                 >
                   {category.name}
@@ -260,8 +256,8 @@ const TodoApp = () => {
                   onClick={() => setFilter(filterName.toLowerCase())}
                   className={`border-2 transition-colors duration-200 ${
                     filter === filterName.toLowerCase()
-                      ? 'bg-black dark:bg-white text-white dark:text-black font-bold'
-                      : 'border-black dark:border-white text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black'
+                      ? 'bg-foreground text-background font-bold'
+                      : 'border-border text-foreground hover:bg-foreground hover:text-background'
                   }`}
                 >
                   {filterName}
@@ -275,12 +271,12 @@ const TodoApp = () => {
               <div
                 key={todo.id}
                 data-todo-item
-                className="flex items-center justify-between p-4 border-2 border-black dark:border-white bg-white dark:bg-black text-black dark:text-white cursor-move"
+                className="flex items-center justify-between p-4 border-2 border-border bg-background text-foreground cursor-move"
               >
                 <div className="flex items-center gap-4">
                   <button
                     onClick={() => handleToggleTodo(todo)}
-                    className="text-black dark:text-white hover:opacity-70 transition-opacity duration-200"
+                    className="text-foreground hover:opacity-70 transition-opacity duration-200"
                   >
                     {todo.completed ? <CheckCircle2 /> : <Circle />}
                   </button>
@@ -292,7 +288,7 @@ const TodoApp = () => {
                 </div>
                 <Button
                   onClick={() => handleDeleteTodo(todo.id)}
-                  className="border-2 border-black dark:border-white text-black dark:text-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors duration-200"
+                  className="border-2 border-border text-foreground hover:bg-foreground hover:text-background transition-colors duration-200"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -300,9 +296,9 @@ const TodoApp = () => {
             ))}
 
             {todos.length === 0 && (
-              <div className="text-center py-12 border-4 border-black dark:border-white">
-                <p className="text-3xl font-bold text-black dark:text-white">NO_TODOS</p>
-                <p className="text-xl text-black/90 dark:text-white/90">ADD_ONE_ABOVE</p>
+              <div className="text-center py-12 border-4 border-border">
+                <p className="text-3xl font-bold text-foreground">NO_TODOS</p>
+                <p className="text-xl text-foreground/90">ADD_ONE_ABOVE</p>
               </div>
             )}
           </div>
