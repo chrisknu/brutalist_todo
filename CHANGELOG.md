@@ -1,3 +1,10 @@
+## [1.0.5](https://github.com/chrisknu/brutalist_todo/compare/v1.0.4...v1.0.5) (2025-01-07)
+
+
+### Bug Fixes
+
+* update Next.js configuration for static exports ([b427b14](https://github.com/chrisknu/brutalist_todo/commit/b427b14cb9a28428b0fd1b7ebfad4db9b3365e91))
+
 ## [1.0.4](https://github.com/chrisknu/brutalist_todo/compare/v1.0.3...v1.0.4) (2025-01-07)
 
 
