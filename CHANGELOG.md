@@ -1,3 +1,17 @@
+# [1.1.0](https://github.com/chrisknu/brutalist_todo/compare/v1.0.7...v1.1.0) (2025-01-07)
+
+
+### Bug Fixes
+
+* Move themeColor to viewport export following Next.js best practices ([cbcc904](https://github.com/chrisknu/brutalist_todo/commit/cbcc90471d238d237f8b4d34a3c9c6fe161b4629))
+
+
+### Features
+
+* Add favicon and app icons ([e0e70a2](https://github.com/chrisknu/brutalist_todo/commit/e0e70a22fa3bbadbea7a8b6ee8707a9b1d9fefb0))
+* Add PWA meta tags and iOS support ([e3f9311](https://github.com/chrisknu/brutalist_todo/commit/e3f9311eeb740f8ccca5cca352b09dc0c2796db2))
+* Add PWA support with next-pwa and enhanced manifest ([57d2fb0](https://github.com/chrisknu/brutalist_todo/commit/57d2fb0cfc4fa663570747a323f9d15352463356))
+
 ## [1.0.7](https://github.com/chrisknu/brutalist_todo/compare/v1.0.6...v1.0.7) (2025-01-07)
 
 
