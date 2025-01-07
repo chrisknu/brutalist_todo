@@ -98,6 +98,7 @@ const TodoApp = () => {
         getInitialData: () => ({
           index,
           id: filteredTodos[index].id,
+          sourceOrder: filteredTodos[index].order,
         }),
       });
       dragCleanupRef.current.push(cleanup);
@@ -106,35 +107,44 @@ const TodoApp = () => {
     const dropCleanup = dropTargetForElements({
       element: parentRef.current,
       onDrop: async ({ source, location }) => {
-        const sourceIndex = source.data.index as number;
         const sourceId = source.data.id as string;
+        const sourceOrder = source.data.sourceOrder as number;
         const overElement = location.current.dropTargets[0];
         if (!overElement) return;
 
         const todoElements = Array.from(todoItems);
         const destinationIndex = todoElements.indexOf(overElement.element as HTMLElement);
+        const destinationOrder = filteredTodos[destinationIndex].order;
 
-        if (sourceIndex !== destinationIndex) {
-          const newTodos = Array.from(todos);
-          const sourceItem = newTodos.find((t) => t.id === sourceId);
-          if (!sourceItem) return;
+        // Get all todos in their current order
+        const newTodos = [...todos].sort((a, b) => (a.order || 0) - (b.order || 0));
+        const sourceItem = newTodos.find((t) => t.id === sourceId);
+        if (!sourceItem) return;
 
-          // Remove from old position and insert at new position
-          newTodos.splice(newTodos.indexOf(sourceItem), 1);
-          newTodos.splice(destinationIndex, 0, sourceItem);
+        // Remove the source item
+        newTodos.splice(
+          newTodos.findIndex((t) => t.id === sourceId),
+          1
+        );
 
-          // Update order for all todos
-          const updatedTodos = newTodos.map((todo, idx) => ({
-            ...todo,
-            order: idx,
-          }));
+        // Find the insertion index based on the destination order
+        const insertionIndex = newTodos.findIndex((t) => (t.order || 0) > destinationOrder);
+        const finalIndex = insertionIndex === -1 ? newTodos.length : insertionIndex;
 
-          setTodos(updatedTodos);
+        // Insert at the correct position
+        newTodos.splice(finalIndex, 0, sourceItem);
 
-          // Update all todos in database
-          for (const todo of updatedTodos) {
-            await updateTodo(todo);
-          }
+        // Update all orders
+        const updatedTodos = newTodos.map((todo, idx) => ({
+          ...todo,
+          order: idx,
+        }));
+
+        setTodos(updatedTodos);
+
+        // Update all todos in database
+        for (const todo of updatedTodos) {
+          await updateTodo(todo);
         }
       },
     });
@@ -144,7 +154,7 @@ const TodoApp = () => {
       dragCleanupRef.current.forEach((cleanup) => cleanup());
       dragCleanupRef.current = [];
     };
-  }, [filteredTodos.length, filteredTodos, todos]); // Add dependencies
+  }, [filteredTodos.length, filteredTodos, todos]);
 
   const loadTodos = async () => {
     try {
