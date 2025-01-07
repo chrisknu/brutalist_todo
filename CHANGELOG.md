@@ -1,3 +1,10 @@
+## [1.0.6](https://github.com/chrisknu/brutalist_todo/compare/v1.0.5...v1.0.6) (2025-01-07)
+
+
+### Bug Fixes
+
+* update lighthouse configuration for Next.js 15 ([4749662](https://github.com/chrisknu/brutalist_todo/commit/4749662332254c17b631da480696659fab67d927))
+
 ## [1.0.5](https://github.com/chrisknu/brutalist_todo/compare/v1.0.4...v1.0.5) (2025-01-07)
 
 
