@@ -19,14 +19,6 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  let nonce = '';
-  try {
-    const headersList = await headers();
-    nonce = headersList.get('x-nonce') || '';
-  } catch {
-    // Ignore errors in case headers are not available
-  }
-
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -51,25 +43,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192x192.png" />
         <link rel="apple-touch-icon" sizes="384x384" href="/icons/icon-384x384.png" />
         <link rel="apple-touch-icon" sizes="512x512" href="/icons/icon-512x512.png" />
-        <script
-          nonce={nonce}
-          dangerouslySetInnerHTML={{
-            __html: `
-            if (typeof window !== 'undefined') {
-              window.__THEME_INIT = true;
-              window.addEventListener('DOMContentLoaded', function() {
-                try {
-                  const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-                  const theme = localStorage.getItem('theme') || systemTheme;
-                  if (theme === 'dark') {
-                    document.documentElement.classList.add('dark');
-                  }
-                } catch (e) {}
-              });
-            }
-          `,
-          }}
-        />
       </head>
       <body className={`${inter.className} antialiased`}>
         <Providers>{children}</Providers>
