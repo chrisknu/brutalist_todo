@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/chrisknu/brutalist_todo/compare/v1.0.0...v1.0.1) (2025-01-07)
+
+
+### Bug Fixes
+
+* update ESLint security configuration to use flat config system ([fe99979](https://github.com/chrisknu/brutalist_todo/commit/fe999798ea4807aeaa800c9de72ae948cec681b3))
+
 # 1.0.0 (2025-01-06)
 
 
