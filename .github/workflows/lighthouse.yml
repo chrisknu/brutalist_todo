@@ -24,8 +24,13 @@ jobs:
       - name: Build Next.js app
         run: npm run build
 
+      - name: Install serve
+        run: npm install -g serve
+
       - name: Install Lighthouse CI
         run: npm install -g @lhci/cli@0.13.x
 
       - name: Run Lighthouse CI
+        env:
+          LHCI_BUILD_CONTEXT__CURRENT_BRANCH: ${{ github.ref_name }}
         run: lhci autorun
