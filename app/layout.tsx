@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
+import { headers } from 'next/headers';
 import './globals.css';
 import { Providers } from './providers';
 
@@ -18,6 +19,14 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  let nonce = '';
+  try {
+    // @ts-ignore - headers() returns Headers object in runtime
+    nonce = headers().get('x-nonce') || '';
+  } catch {
+    // Ignore errors in case headers are not available
+  }
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -43,6 +52,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="apple-touch-icon" sizes="384x384" href="/icons/icon-384x384.png" />
         <link rel="apple-touch-icon" sizes="512x512" href="/icons/icon-512x512.png" />
         <script
+          nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: `
             (function() {
