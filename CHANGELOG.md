@@ -1,3 +1,10 @@
+## [1.0.3](https://github.com/chrisknu/brutalist_todo/compare/v1.0.2...v1.0.3) (2025-01-07)
+
+
+### Bug Fixes
+
+* update lighthouse CI configuration to work with Next.js static analysis ([95ed663](https://github.com/chrisknu/brutalist_todo/commit/95ed663e2124c7db034f16dce97612b7edb73953))
+
 ## [1.0.2](https://github.com/chrisknu/brutalist_todo/compare/v1.0.1...v1.0.2) (2025-01-07)
 
 
