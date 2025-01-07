@@ -18,11 +18,11 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
   let nonce = '';
   try {
-    // @ts-ignore - headers() returns Headers object in runtime
-    nonce = headers().get('x-nonce') || '';
+    const headersList = await headers();
+    nonce = headersList.get('x-nonce') || '';
   } catch {
     // Ignore errors in case headers are not available
   }
