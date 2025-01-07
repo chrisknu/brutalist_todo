@@ -55,15 +55,18 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: `
-            (function() {
-              try {
-                const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-                const theme = localStorage.getItem('theme') || systemTheme;
-                if (theme === 'dark') {
-                  document.documentElement.classList.add('dark');
-                }
-              } catch (e) {}
-            })();
+            if (typeof window !== 'undefined') {
+              window.__THEME_INIT = true;
+              window.addEventListener('DOMContentLoaded', function() {
+                try {
+                  const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                  const theme = localStorage.getItem('theme') || systemTheme;
+                  if (theme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                  }
+                } catch (e) {}
+              });
+            }
           `,
           }}
         />
