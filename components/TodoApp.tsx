@@ -82,6 +82,13 @@ const TodoApp = () => {
     return todo.categoryId === filter;
   });
 
+  const rowVirtualizer = useVirtualizer({
+    count: filteredTodos.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 50,
+    overscan: 5,
+  });
+
   // Setup drag and drop once
   useEffect(() => {
     if (!parentRef.current) return;
@@ -91,20 +98,36 @@ const TodoApp = () => {
     dragCleanupRef.current = [];
 
     const todoItems = parentRef.current.querySelectorAll('[data-todo-item]');
+    const virtualItems = rowVirtualizer.getVirtualItems();
 
-    todoItems.forEach((item, index) => {
+    todoItems.forEach((item, visualIndex) => {
+      const virtualItem = virtualItems[visualIndex];
+      if (!virtualItem) return;
+
+      const actualIndex = virtualItem.index;
+      const todo = filteredTodos[actualIndex];
+      if (!todo) return;
+
       const cleanup = draggable({
         element: item as HTMLElement,
         getInitialData: () => ({
-          index,
-          id: filteredTodos[index].id,
-          sourceOrder: filteredTodos[index].order,
+          index: actualIndex,
+          id: todo.id,
+          sourceOrder: todo.order,
         }),
       });
       dragCleanupRef.current.push(cleanup);
+
+      // Make each item a drop target
+      const dropCleanup = dropTargetForElements({
+        element: item as HTMLElement,
+        getData: () => ({ index: actualIndex }),
+      });
+      dragCleanupRef.current.push(dropCleanup);
     });
 
-    const dropCleanup = dropTargetForElements({
+    // Add drop target for the container
+    const containerDropCleanup = dropTargetForElements({
       element: parentRef.current,
       onDrop: async ({ source, location }) => {
         const sourceId = source.data.id as string;
@@ -112,21 +135,24 @@ const TodoApp = () => {
         const overElement = location.current.dropTargets[0];
         if (!overElement) return;
 
-        const todoElements = Array.from(todoItems);
-        const destinationIndex = todoElements.indexOf(overElement.element as HTMLElement);
+        // Find the actual index from the virtual list
+        const virtualItems = rowVirtualizer.getVirtualItems();
+        const visualIndex = Array.from(todoItems).indexOf(overElement.element as HTMLElement);
+        const virtualItem = virtualItems[visualIndex];
+        if (!virtualItem) return;
 
-        // Safety check for valid destination
+        const destinationIndex = virtualItem.index;
         if (destinationIndex < 0 || destinationIndex >= filteredTodos.length) return;
 
         const destinationOrder = filteredTodos[destinationIndex].order;
+
+        // If dragging to the same position, no need to update
+        if (sourceOrder === destinationOrder) return;
 
         // Get all todos in their current order
         const newTodos = [...todos].sort((a, b) => (a.order || 0) - (b.order || 0));
         const sourceItem = newTodos.find((t) => t.id === sourceId);
         if (!sourceItem) return;
-
-        // If dragging to the same position, no need to update
-        if (sourceOrder === destinationOrder) return;
 
         // Remove the source item
         newTodos.splice(
@@ -138,10 +164,10 @@ const TodoApp = () => {
         let newOrder: number;
         if (destinationIndex === 0) {
           // If dropping at the start
-          newOrder = (filteredTodos[0].order || 0) - 1;
+          newOrder = (filteredTodos[0].order || 0) - 1000;
         } else if (destinationIndex === filteredTodos.length - 1) {
           // If dropping at the end
-          newOrder = (filteredTodos[filteredTodos.length - 1].order || 0) + 1;
+          newOrder = (filteredTodos[filteredTodos.length - 1].order || 0) + 1000;
         } else {
           // If dropping between items, use the average of the surrounding orders
           const prevOrder = filteredTodos[destinationIndex - 1].order || 0;
@@ -173,13 +199,13 @@ const TodoApp = () => {
         }
       },
     });
-    dragCleanupRef.current.push(dropCleanup);
+    dragCleanupRef.current.push(containerDropCleanup);
 
     return () => {
       dragCleanupRef.current.forEach((cleanup) => cleanup());
       dragCleanupRef.current = [];
     };
-  }, [filteredTodos.length, filteredTodos, todos]);
+  }, [filteredTodos.length, filteredTodos, todos, rowVirtualizer]);
 
   const loadTodos = async () => {
     try {
@@ -214,13 +240,6 @@ const TodoApp = () => {
       setAlert('Failed to add todo');
     }
   };
-
-  const rowVirtualizer = useVirtualizer({
-    count: filteredTodos.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 50,
-    overscan: 5,
-  });
 
   const memoizedHandleToggleTodo = useCallback(async (todo: Todo) => {
     try {
