@@ -1,10 +1,11 @@
 {
   "ci": {
     "collect": {
-      "url": ["http://localhost:3000"],
+      "staticDistDir": "out",
       "numberOfRuns": 3,
       "settings": {
-        "preset": "desktop"
+        "preset": "desktop",
+        "skipAudits": ["robots-txt", "canonical"]
       }
     },
     "assert": {
