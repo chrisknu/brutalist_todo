@@ -1,3 +1,12 @@
+## [1.0.2](https://github.com/chrisknu/brutalist_todo/compare/v1.0.1...v1.0.2) (2025-01-07)
+
+
+### Bug Fixes
+
+* correct color variable usage and fix inverted colors in light/dark modes ([4b1a012](https://github.com/chrisknu/brutalist_todo/commit/4b1a01286fb02a227704a59cc1913a03f2a18686))
+* improve dark mode implementation to prevent flash and add proper color scheme ([4c02b4d](https://github.com/chrisknu/brutalist_todo/commit/4c02b4d23a23cebbc18cd9600fa35945905260f3))
+* improve text contrast and visibility in dark mode ([4a7bdb4](https://github.com/chrisknu/brutalist_todo/commit/4a7bdb44e057eb491a8f5ffd39a5daeca36e2c7c))
+
 ## [1.0.1](https://github.com/chrisknu/brutalist_todo/compare/v1.0.0...v1.0.1) (2025-01-07)
 
 
