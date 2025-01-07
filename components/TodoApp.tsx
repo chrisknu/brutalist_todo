@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Plus, Trash2, CheckCircle2, Circle, Mic, MicOff } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Input } from '../components/ui/input';
@@ -12,6 +12,7 @@ import {
   dropTargetForElements,
 } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import type { SpeechRecognition, SpeechRecognitionEvent } from '../lib/speech-types';
+import { useVirtualizer, VirtualItem } from '@tanstack/react-virtual';
 
 const DEFAULT_CATEGORIES: Category[] = [
   { id: 'work', name: 'WORK', color: '#000000' },
@@ -19,6 +20,36 @@ const DEFAULT_CATEGORIES: Category[] = [
   { id: 'shopping', name: 'SHOPPING', color: '#000000' },
   { id: 'health', name: 'HEALTH', color: '#000000' },
 ];
+
+// Memoized TodoItem component
+const TodoItem = React.memo(
+  ({
+    todo,
+    onToggle,
+    onDelete,
+  }: {
+    todo: Todo;
+    onToggle: (todo: Todo) => void;
+    onDelete: (id: string) => void;
+  }) => (
+    <div
+      className="flex items-center gap-2 p-2 border-2 border-border bg-background"
+      data-todo-item
+    >
+      <button onClick={() => onToggle(todo)} className="hover:opacity-70">
+        {todo.completed ? <CheckCircle2 className="h-5 w-5" /> : <Circle className="h-5 w-5" />}
+      </button>
+      <span className={`flex-1 ${todo.completed ? 'line-through opacity-50' : ''}`}>
+        {todo.text}
+      </span>
+      <button onClick={() => onDelete(todo.id)} className="hover:opacity-70">
+        <Trash2 className="h-5 w-5" />
+      </button>
+    </div>
+  )
+);
+
+TodoItem.displayName = 'TodoItem';
 
 const TodoApp = () => {
   const [mounted, setMounted] = useState(false);
@@ -119,7 +150,27 @@ const TodoApp = () => {
     }
   };
 
-  const handleToggleTodo = async (todo: Todo) => {
+  const parentRef = React.useRef<HTMLDivElement>(null);
+
+  // Sort todos by order
+  const sortedTodos = [...todos].sort((a: Todo, b: Todo) => a.order - b.order);
+
+  // Filter todos based on current filter
+  const filteredTodos = sortedTodos.filter((todo) => {
+    if (filter === 'all') return true;
+    if (filter === 'done') return todo.completed;
+    if (filter === 'active') return !todo.completed;
+    return todo.categoryId === filter;
+  });
+
+  const rowVirtualizer = useVirtualizer({
+    count: filteredTodos.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 50,
+    overscan: 5,
+  });
+
+  const memoizedHandleToggleTodo = useCallback(async (todo: Todo) => {
     try {
       await updateTodo({
         ...todo,
@@ -129,17 +180,20 @@ const TodoApp = () => {
     } catch (error) {
       console.error('Error:', error);
     }
-  };
+  }, []);
 
-  const handleDeleteTodo = async (id: string) => {
-    try {
-      await deleteTodo(id);
-      setTodos(todos.filter((todo) => todo.id !== id));
-      setAlert('Todo deleted successfully');
-    } catch (error) {
-      setAlert('Failed to delete todo');
-    }
-  };
+  const memoizedHandleDeleteTodo = useCallback(
+    async (id: string) => {
+      try {
+        await deleteTodo(id);
+        setTodos(todos.filter((todo) => todo.id !== id));
+        setAlert('Todo deleted successfully');
+      } catch (error) {
+        setAlert('Failed to delete todo');
+      }
+    },
+    [todos]
+  );
 
   const toggleVoiceInput = () => {
     if (!isListening) {
@@ -177,17 +231,6 @@ const TodoApp = () => {
   if (!mounted) {
     return null;
   }
-
-  // Sort todos by order
-  const sortedTodos = [...todos].sort((a: Todo, b: Todo) => a.order - b.order);
-
-  // Filter todos based on current filter
-  const filteredTodos = sortedTodos.filter((todo) => {
-    if (filter === 'all') return true;
-    if (filter === 'done') return todo.completed;
-    if (filter === 'active') return !todo.completed;
-    return todo.categoryId === filter;
-  });
 
   return (
     <div className="min-h-screen bg-background text-foreground font-mono">
@@ -270,50 +313,49 @@ const TodoApp = () => {
             )}
           </div>
 
-          <div className="space-y-2" ref={todosContainerRef}>
-            {filteredTodos.map((todo) => (
-              <div
-                key={todo.id}
-                data-todo-item
-                className="flex items-center justify-between p-4 brutalist-container border-border bg-background text-foreground cursor-move"
-              >
-                <div className="flex items-center gap-4">
-                  <button
-                    onClick={() => handleToggleTodo(todo)}
-                    className="text-foreground hover:opacity-70"
+          <div ref={parentRef} className="h-[400px] overflow-auto">
+            <div
+              style={{
+                height: `${rowVirtualizer.getTotalSize()}px`,
+                width: '100%',
+                position: 'relative',
+              }}
+            >
+              {rowVirtualizer.getVirtualItems().map((virtualRow: VirtualItem) => {
+                const todo = filteredTodos[virtualRow.index];
+                return (
+                  <div
+                    key={todo.id}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: `${virtualRow.size}px`,
+                      transform: `translateY(${virtualRow.start}px)`,
+                    }}
                   >
-                    {todo.completed ? (
-                      <CheckCircle2 className="w-6 h-6" />
-                    ) : (
-                      <Circle className="w-6 h-6" />
-                    )}
-                  </button>
-                  <span
-                    className={todo.completed ? 'line-through opacity-50 uppercase' : 'uppercase'}
-                  >
-                    {todo.text}
-                  </span>
-                </div>
-                <Button
-                  onClick={() => handleDeleteTodo(todo.id)}
-                  className="brutalist-button border-border text-foreground hover:bg-foreground hover:text-background"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
-
-            {todos.length === 0 && (
-              <div className="text-center py-12 brutalist-container border-border">
-                <p className="text-4xl font-bold text-foreground tracking-tight">NO_TODOS</p>
-                <p className="text-xl text-foreground uppercase mt-2">ADD_ONE_ABOVE</p>
-              </div>
-            )}
+                    <TodoItem
+                      todo={todo}
+                      onToggle={memoizedHandleToggleTodo}
+                      onDelete={memoizedHandleDeleteTodo}
+                    />
+                  </div>
+                );
+              })}
+            </div>
           </div>
+
+          {todos.length === 0 && (
+            <div className="text-center py-12 brutalist-container border-border">
+              <p className="text-4xl font-bold text-foreground tracking-tight">NO_TODOS</p>
+              <p className="text-xl text-foreground uppercase mt-2">ADD_ONE_ABOVE</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 };
 
-export default TodoApp;
+export default React.memo(TodoApp);

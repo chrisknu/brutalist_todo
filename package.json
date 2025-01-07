@@ -17,6 +17,7 @@
   "dependencies": {
     "@atlaskit/pragmatic-drag-and-drop": "^1.4.0",
     "@radix-ui/react-slot": "^1.0.2",
+    "@tanstack/react-virtual": "^3.11.2",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "lucide-react": "^0.469.0",
