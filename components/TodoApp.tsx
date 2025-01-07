@@ -114,6 +114,10 @@ const TodoApp = () => {
 
         const todoElements = Array.from(todoItems);
         const destinationIndex = todoElements.indexOf(overElement.element as HTMLElement);
+
+        // Safety check for valid destination
+        if (destinationIndex < 0 || destinationIndex >= filteredTodos.length) return;
+
         const destinationOrder = filteredTodos[destinationIndex].order;
 
         // Get all todos in their current order
@@ -121,23 +125,44 @@ const TodoApp = () => {
         const sourceItem = newTodos.find((t) => t.id === sourceId);
         if (!sourceItem) return;
 
+        // If dragging to the same position, no need to update
+        if (sourceOrder === destinationOrder) return;
+
         // Remove the source item
         newTodos.splice(
           newTodos.findIndex((t) => t.id === sourceId),
           1
         );
 
-        // Find the insertion index based on the destination order
-        const insertionIndex = newTodos.findIndex((t) => (t.order || 0) > destinationOrder);
+        // Calculate the new order value
+        let newOrder: number;
+        if (destinationIndex === 0) {
+          // If dropping at the start
+          newOrder = (filteredTodos[0].order || 0) - 1;
+        } else if (destinationIndex === filteredTodos.length - 1) {
+          // If dropping at the end
+          newOrder = (filteredTodos[filteredTodos.length - 1].order || 0) + 1;
+        } else {
+          // If dropping between items, use the average of the surrounding orders
+          const prevOrder = filteredTodos[destinationIndex - 1].order || 0;
+          const nextOrder = filteredTodos[destinationIndex].order || 0;
+          newOrder = prevOrder + (nextOrder - prevOrder) / 2;
+        }
+
+        // Update the source item with the new order
+        sourceItem.order = newOrder;
+
+        // Find the insertion index based on the new order
+        const insertionIndex = newTodos.findIndex((t) => (t.order || 0) > newOrder);
         const finalIndex = insertionIndex === -1 ? newTodos.length : insertionIndex;
 
         // Insert at the correct position
         newTodos.splice(finalIndex, 0, sourceItem);
 
-        // Update all orders
+        // Normalize all orders to be integers
         const updatedTodos = newTodos.map((todo, idx) => ({
           ...todo,
-          order: idx,
+          order: idx * 1000, // Use larger intervals to allow for future insertions
         }));
 
         setTodos(updatedTodos);
