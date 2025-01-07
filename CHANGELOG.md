@@ -1,3 +1,10 @@
+## [1.1.2](https://github.com/chrisknu/brutalist_todo/compare/v1.1.1...v1.1.2) (2025-01-07)
+
+
+### Bug Fixes
+
+* update lighthouse ci to secure version - Downgrade to @lhci/cli@0.10.0 to fix security vulnerabilities - Add custom puppeteer script for better control - Update CI configuration for compatibility ([f90480b](https://github.com/chrisknu/brutalist_todo/commit/f90480b34ce5611ffb319d2e04be261685f427f6))
+
 ## [1.1.1](https://github.com/chrisknu/brutalist_todo/compare/v1.1.0...v1.1.1) (2025-01-07)
 
 
