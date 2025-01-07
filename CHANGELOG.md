@@ -1,3 +1,10 @@
+## [1.1.3](https://github.com/chrisknu/brutalist_todo/compare/v1.1.2...v1.1.3) (2025-01-07)
+
+
+### Bug Fixes
+
+* update lighthouse and dependencies - Update @lhci/cli to 0.14.0 to fix security vulnerabilities - Remove custom puppeteer script - Update lighthouse configuration for compatibility - Update GitHub Actions workflow ([e8bd5e6](https://github.com/chrisknu/brutalist_todo/commit/e8bd5e649f937e6c53720805d14f952d373ef4d8))
+
 ## [1.1.2](https://github.com/chrisknu/brutalist_todo/compare/v1.1.1...v1.1.2) (2025-01-07)
 
 
