@@ -1,3 +1,10 @@
+## [1.0.7](https://github.com/chrisknu/brutalist_todo/compare/v1.0.6...v1.0.7) (2025-01-07)
+
+
+### Bug Fixes
+
+* address lighthouse CI security and performance issues ([9f2b376](https://github.com/chrisknu/brutalist_todo/commit/9f2b37643363125ef5a455bb1f98e9db639b0512))
+
 ## [1.0.6](https://github.com/chrisknu/brutalist_todo/compare/v1.0.5...v1.0.6) (2025-01-07)
 
 
