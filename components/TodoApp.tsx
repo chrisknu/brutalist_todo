@@ -60,32 +60,54 @@ const TodoApp = () => {
   const [filter, setFilter] = useState<string>('all');
   const [isListening, setIsListening] = useState(false);
   const { theme, setTheme } = useTheme();
-  const todosContainerRef = React.useRef<HTMLDivElement>(null);
+  const parentRef = React.useRef<HTMLDivElement>(null);
+  const dragCleanupRef = React.useRef<(() => void)[]>([]);
 
   useEffect(() => {
     setMounted(true);
     loadTodos();
   }, []);
 
-  // Add drag and drop effect after todos load
-  useEffect(() => {
-    if (!todosContainerRef.current) return;
+  // Sort todos by order
+  const sortedTodos = useMemo(
+    () => [...todos].sort((a: Todo, b: Todo) => (a.order || 0) - (b.order || 0)),
+    [todos]
+  );
 
-    const todoItems = todosContainerRef.current.querySelectorAll('[data-todo-item]');
-    const cleanupFns: (() => void)[] = [];
+  // Filter todos based on current filter
+  const filteredTodos = sortedTodos.filter((todo) => {
+    if (filter === 'all') return true;
+    if (filter === 'done') return todo.completed;
+    if (filter === 'active') return !todo.completed;
+    return todo.categoryId === filter;
+  });
+
+  // Setup drag and drop once
+  useEffect(() => {
+    if (!parentRef.current) return;
+
+    // Cleanup previous handlers
+    dragCleanupRef.current.forEach((cleanup) => cleanup());
+    dragCleanupRef.current = [];
+
+    const todoItems = parentRef.current.querySelectorAll('[data-todo-item]');
 
     todoItems.forEach((item, index) => {
       const cleanup = draggable({
         element: item as HTMLElement,
-        getInitialData: () => ({ index }),
+        getInitialData: () => ({
+          index,
+          id: filteredTodos[index].id,
+        }),
       });
-      cleanupFns.push(cleanup);
+      dragCleanupRef.current.push(cleanup);
     });
 
     const dropCleanup = dropTargetForElements({
-      element: todosContainerRef.current,
+      element: parentRef.current,
       onDrop: async ({ source, location }) => {
         const sourceIndex = source.data.index as number;
+        const sourceId = source.data.id as string;
         const overElement = location.current.dropTargets[0];
         if (!overElement) return;
 
@@ -94,27 +116,35 @@ const TodoApp = () => {
 
         if (sourceIndex !== destinationIndex) {
           const newTodos = Array.from(todos);
-          const [removed] = newTodos.splice(sourceIndex, 1);
-          newTodos.splice(destinationIndex, 0, removed);
+          const sourceItem = newTodos.find((t) => t.id === sourceId);
+          if (!sourceItem) return;
 
+          // Remove from old position and insert at new position
+          newTodos.splice(newTodos.indexOf(sourceItem), 1);
+          newTodos.splice(destinationIndex, 0, sourceItem);
+
+          // Update order for all todos
           const updatedTodos = newTodos.map((todo, idx) => ({
             ...todo,
             order: idx,
           }));
 
           setTodos(updatedTodos);
+
+          // Update all todos in database
           for (const todo of updatedTodos) {
             await updateTodo(todo);
           }
         }
       },
     });
-    cleanupFns.push(dropCleanup);
+    dragCleanupRef.current.push(dropCleanup);
 
     return () => {
-      cleanupFns.forEach((cleanup) => cleanup());
+      dragCleanupRef.current.forEach((cleanup) => cleanup());
+      dragCleanupRef.current = [];
     };
-  }, [todos]);
+  }, [filteredTodos.length, filteredTodos, todos]); // Add dependencies
 
   const loadTodos = async () => {
     try {
@@ -149,19 +179,6 @@ const TodoApp = () => {
       setAlert('Failed to add todo');
     }
   };
-
-  const parentRef = React.useRef<HTMLDivElement>(null);
-
-  // Sort todos by order
-  const sortedTodos = [...todos].sort((a: Todo, b: Todo) => a.order - b.order);
-
-  // Filter todos based on current filter
-  const filteredTodos = sortedTodos.filter((todo) => {
-    if (filter === 'all') return true;
-    if (filter === 'done') return todo.completed;
-    if (filter === 'active') return !todo.completed;
-    return todo.categoryId === filter;
-  });
 
   const rowVirtualizer = useVirtualizer({
     count: filteredTodos.length,
