@@ -1,3 +1,21 @@
+## [1.1.4](https://github.com/chrisknu/brutalist_todo/compare/v1.1.3...v1.1.4) (2025-01-07)
+
+
+### Bug Fixes
+
+* add CSP nonce to inline theme script ([e96b476](https://github.com/chrisknu/brutalist_todo/commit/e96b476ceecd1702c77434a18633121ab34cc765))
+* handle edge cases in drag and drop with virtualized lists ([e063faa](https://github.com/chrisknu/brutalist_todo/commit/e063faa7644a1c1ae1c6e19f82c418ae141b104d))
+* improve drag and drop ordering accuracy ([dc658ce](https://github.com/chrisknu/brutalist_todo/commit/dc658ce9a94b1b33f097e09c29a0e787f0b4ea6a))
+* improve drag and drop with virtualized list ([cf2e7d0](https://github.com/chrisknu/brutalist_todo/commit/cf2e7d00ea6e37a5009d9cfeb2a1c91bfa82a57e))
+* move theme initialization to client component ([ade2e5f](https://github.com/chrisknu/brutalist_todo/commit/ade2e5f2e93f8db7120debceae8b45cc9c53e87e))
+* prevent hydration mismatch in theme detection ([b80a0f9](https://github.com/chrisknu/brutalist_todo/commit/b80a0f9e5451d767d11e566a98a77acb53e78997))
+* properly await headers() in RootLayout ([5f6c34c](https://github.com/chrisknu/brutalist_todo/commit/5f6c34c0fe16d215bc5e8e2beef32cfd68d7418f))
+* remove duplicate CSP header from next.config.js ([e4f5853](https://github.com/chrisknu/brutalist_todo/commit/e4f5853b2833d884a921b2731832a0babcc9bca5))
+* resolve drag and drop reordering functionality ([30154b3](https://github.com/chrisknu/brutalist_todo/commit/30154b3b532234db452e728ce6892cd37080b6b9))
+* update CSP for Next.js requirements ([8045fef](https://github.com/chrisknu/brutalist_todo/commit/8045fefb8eb9d2b476b5270c5c61c5b9cba93a87))
+* update CSP to allow Next.js static assets and chunks ([bdffc03](https://github.com/chrisknu/brutalist_todo/commit/bdffc03e67ee1ed85789647803e5d2ce4a0c94d1))
+* update CSP to allow PWA and service worker functionality ([2858b1e](https://github.com/chrisknu/brutalist_todo/commit/2858b1e76faf236aba52d2423f318fb49b5a16e9))
+
 ## [1.1.3](https://github.com/chrisknu/brutalist_todo/compare/v1.1.2...v1.1.3) (2025-01-07)
 
 
