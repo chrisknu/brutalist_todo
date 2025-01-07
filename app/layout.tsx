@@ -14,16 +14,13 @@ export const metadata: Metadata = {
   ],
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{
-          __html: `
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
             (function() {
               try {
                 const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -33,8 +30,9 @@ export default function RootLayout({
                 }
               } catch (e) {}
             })();
-          `
-        }} />
+          `,
+          }}
+        />
       </head>
       <body className={`${inter.className} antialiased`}>
         <Providers>{children}</Providers>
