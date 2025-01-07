@@ -1,3 +1,10 @@
+## [1.0.4](https://github.com/chrisknu/brutalist_todo/compare/v1.0.3...v1.0.4) (2025-01-07)
+
+
+### Bug Fixes
+
+* update lighthouse CI to use static export ([90618e2](https://github.com/chrisknu/brutalist_todo/commit/90618e2761b5e0a3b0b0207cae176239ef998388))
+
 ## [1.0.3](https://github.com/chrisknu/brutalist_todo/compare/v1.0.2...v1.0.3) (2025-01-07)
 
 
