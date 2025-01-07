@@ -191,12 +191,12 @@ const TodoApp = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground font-mono">
-      <div className="max-w-4xl mx-auto border-4 border-border">
-        <div className="bg-foreground p-4 flex justify-between items-center">
-          <h1 className="text-2xl text-background font-bold">TODO_OR_NOT_TODO</h1>
+      <div className="max-w-4xl mx-auto brutalist-container border-border">
+        <div className="bg-foreground p-4 flex justify-between items-center border-b-4 border-border">
+          <h1 className="text-3xl text-background font-bold tracking-tight">TODO_OR_NOT_TODO</h1>
           <Button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="border-2 border-background text-background hover:bg-background hover:text-foreground transition-colors duration-200"
+            className="brutalist-button border-background text-background hover:bg-background hover:text-foreground"
           >
             {theme === 'dark' ? 'LIGHT' : 'DARK'}
           </Button>
@@ -204,7 +204,11 @@ const TodoApp = () => {
 
         <div className="p-4 bg-background text-foreground">
           <div className="h-16 mb-4">
-            {alert && <div className="bg-foreground text-background p-4 font-bold">{alert}</div>}
+            {alert && (
+              <div className="bg-foreground text-background p-4 font-bold border-4 border-border">
+                {alert}
+              </div>
+            )}
           </div>
 
           <form onSubmit={handleAddTodo} className="mb-6">
@@ -214,18 +218,18 @@ const TodoApp = () => {
                 placeholder="WHAT NEEDS TO BE DONE?"
                 value={newTodo}
                 onChange={(e) => setNewTodo(e.target.value)}
-                className="flex-1 border-2 border-border bg-background text-foreground placeholder:text-foreground/70"
+                className="flex-1 brutalist-input border-border bg-background text-foreground placeholder:text-foreground/70"
               />
               <Button
                 type="button"
                 onClick={toggleVoiceInput}
-                className="border-2 border-border text-foreground hover:bg-foreground hover:text-background transition-colors duration-200"
+                className="brutalist-button border-border text-foreground hover:bg-foreground hover:text-background"
               >
                 {isListening ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
               </Button>
               <Button
                 type="submit"
-                className="border-2 border-border text-foreground hover:bg-foreground hover:text-background transition-colors duration-200"
+                className="brutalist-button border-border text-foreground hover:bg-foreground hover:text-background px-8"
               >
                 ADD
               </Button>
@@ -236,9 +240,9 @@ const TodoApp = () => {
                 <Button
                   key={category.id}
                   onClick={() => setSelectedCategory(category.id)}
-                  className={`border-2 transition-colors duration-200 ${
+                  className={`brutalist-button ${
                     selectedCategory === category.id
-                      ? 'bg-foreground text-background font-bold'
+                      ? 'bg-foreground text-background'
                       : 'border-border text-foreground hover:bg-foreground hover:text-background'
                   }`}
                 >
@@ -248,15 +252,15 @@ const TodoApp = () => {
             </div>
           </form>
 
-          <div className="flex gap-2 mb-4">
+          <div className="flex gap-2 mb-4 flex-wrap">
             {['ALL', 'ACTIVE', 'DONE', ...DEFAULT_CATEGORIES.map((c) => c.name)].map(
               (filterName) => (
                 <Button
                   key={filterName}
                   onClick={() => setFilter(filterName.toLowerCase())}
-                  className={`border-2 transition-colors duration-200 ${
+                  className={`brutalist-button ${
                     filter === filterName.toLowerCase()
-                      ? 'bg-foreground text-background font-bold'
+                      ? 'bg-foreground text-background'
                       : 'border-border text-foreground hover:bg-foreground hover:text-background'
                   }`}
                 >
@@ -271,24 +275,28 @@ const TodoApp = () => {
               <div
                 key={todo.id}
                 data-todo-item
-                className="flex items-center justify-between p-4 border-2 border-border bg-background text-foreground cursor-move"
+                className="flex items-center justify-between p-4 brutalist-container border-border bg-background text-foreground cursor-move"
               >
                 <div className="flex items-center gap-4">
                   <button
                     onClick={() => handleToggleTodo(todo)}
-                    className="text-foreground hover:opacity-70 transition-opacity duration-200"
+                    className="text-foreground hover:opacity-70"
                   >
-                    {todo.completed ? <CheckCircle2 /> : <Circle />}
+                    {todo.completed ? (
+                      <CheckCircle2 className="w-6 h-6" />
+                    ) : (
+                      <Circle className="w-6 h-6" />
+                    )}
                   </button>
                   <span
-                    className={`${todo.completed ? 'line-through opacity-50' : ''} transition-opacity duration-200`}
+                    className={todo.completed ? 'line-through opacity-50 uppercase' : 'uppercase'}
                   >
                     {todo.text}
                   </span>
                 </div>
                 <Button
                   onClick={() => handleDeleteTodo(todo.id)}
-                  className="border-2 border-border text-foreground hover:bg-foreground hover:text-background transition-colors duration-200"
+                  className="brutalist-button border-border text-foreground hover:bg-foreground hover:text-background"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -296,9 +304,9 @@ const TodoApp = () => {
             ))}
 
             {todos.length === 0 && (
-              <div className="text-center py-12 border-4 border-border">
-                <p className="text-3xl font-bold text-foreground">NO_TODOS</p>
-                <p className="text-xl text-foreground/90">ADD_ONE_ABOVE</p>
+              <div className="text-center py-12 brutalist-container border-border">
+                <p className="text-4xl font-bold text-foreground tracking-tight">NO_TODOS</p>
+                <p className="text-xl text-foreground uppercase mt-2">ADD_ONE_ABOVE</p>
               </div>
             )}
           </div>
