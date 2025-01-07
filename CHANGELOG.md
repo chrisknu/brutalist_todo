@@ -1,3 +1,11 @@
+## [1.1.1](https://github.com/chrisknu/brutalist_todo/compare/v1.1.0...v1.1.1) (2025-01-07)
+
+
+### Performance Improvements
+
+* optimize app performance - Add CSP headers via middleware - Implement virtualization for todo list - Add DB connection pooling and caching - Optimize component rendering with memoization ([c21b540](https://github.com/chrisknu/brutalist_todo/commit/c21b540e037e32f99206237d5973cc205235f75b))
+* optimize app performance and add lighthouse testing - Add CSP headers and security middleware - Implement virtualization for todo list - Add DB connection pooling and caching - Configure Lighthouse CI ([72aac08](https://github.com/chrisknu/brutalist_todo/commit/72aac086281976dca65e4eaef63f15add8cb6ebb))
+
 # [1.1.0](https://github.com/chrisknu/brutalist_todo/compare/v1.0.7...v1.1.0) (2025-01-07)
 
 
