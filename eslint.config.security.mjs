@@ -13,6 +13,15 @@ export default [
       '**/*.spec.*',
       '**/__tests__/**',
     ],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
+      parserOptions: {
+        ecmaFeatures: {
+          jsx: true,
+        },
+      },
+    },
     plugins: {
       security: securityPlugin,
       'security-node': securityNodePlugin,
