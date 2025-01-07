@@ -24,9 +24,6 @@ jobs:
       - name: Build Next.js app
         run: npm run build
 
-      - name: Export Next.js app
-        run: npm run export || npx next export
-
       - name: Install Lighthouse CI
         run: npm install -g @lhci/cli@0.13.x
 
